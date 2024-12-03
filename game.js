@@ -6,6 +6,9 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 
+// Import Enemy class from enemies.js
+const Enemy = window.Enemy;
+
 // Game state
 const gameState = {
     score: 0,
@@ -48,49 +51,106 @@ document.querySelectorAll('.tower-option').forEach(option => {
 
 // Wave configuration
 const WAVES = [
-    // Wave 1: All enemy types
-    { 
-        count: 20, 
-        type: 'mixed', 
-        types: ['regular', 'fast', 'tank', 'ninja', 'ghost'], 
-        interval: 1000,
-        bosses: [{ type: 'boss', at: 15 }]
+    // Wave 1: Mixed enemies
+    {
+        name: "Mixed Mayhem",
+        count: 20,
+        type: 'mixed',
+        types: ['regular', 'fast', 'tank'],
+        interval: 1500,
+        bosses: []
     },
-    
-    // Wave 2: All enemy types
-    { 
-        count: 20, 
-        type: 'mixed', 
-        types: ['regular', 'fast', 'tank', 'ninja', 'ghost'], 
-        interval: 1000,
-        bosses: [{ type: 'boss', at: 15 }]
+    // Wave 2: Fast enemies
+    {
+        name: "Fast Forward!",
+        count: 25,
+        type: 'mixed',
+        types: ['fast', 'regular'],
+        interval: 1200,
+        bosses: []
     },
-    
-    // Wave 3: All enemy types
-    { 
-        count: 20, 
-        type: 'mixed', 
-        types: ['regular', 'fast', 'tank', 'ninja', 'ghost'], 
-        interval: 1000,
-        bosses: [{ type: 'boss', at: 15 }]
+    // Wave 3: Tank enemies
+    {
+        name: "Tank Brigade",
+        count: 20,
+        type: 'mixed',
+        types: ['tank', 'regular'],
+        interval: 2000,
+        bosses: []
     },
-    
-    // Wave 4: All enemy types
-    { 
-        count: 20, 
-        type: 'mixed', 
-        types: ['regular', 'fast', 'tank', 'ninja', 'ghost'], 
+    // Wave 4: Ghost enemies
+    {
+        name: "Ghost Train",
+        count: 30,
+        type: 'mixed',
+        types: ['ghost', 'fast'],
         interval: 1000,
-        bosses: [{ type: 'boss', at: 15 }]
+        bosses: []
     },
-    
-    // Wave 5: All enemy types
-    { 
-        count: 20, 
-        type: 'mixed', 
-        types: ['regular', 'fast', 'tank', 'ninja', 'ghost'], 
+    // Wave 5: Boss wave
+    {
+        name: "Boss Rush",
+        count: 15,
+        type: 'mixed',
+        types: ['tank', 'regular'],
+        interval: 2000,
+        bosses: [
+            { type: 'boss', at: 7 },
+            { type: 'boss', at: 14 }
+        ]
+    },
+    // Wave 6: Speed demons
+    {
+        name: "Speed Demons",
+        count: 40,
+        type: 'mixed',
+        types: ['fast', 'ninja'],
+        interval: 800,
+        bosses: []
+    },
+    // Wave 7: Tank parade
+    {
+        name: "Tank Parade",
+        count: 25,
+        type: 'mixed',
+        types: ['tank'],
+        interval: 2000,
+        bosses: [
+            { type: 'boss', at: 12 },
+            { type: 'boss', at: 24 }
+        ]
+    },
+    // Wave 8: Ninja assault
+    {
+        name: "Ninja Assault",
+        count: 35,
+        type: 'mixed',
+        types: ['ninja', 'fast'],
         interval: 1000,
-        bosses: [{ type: 'boss', at: 15 }]
+        bosses: []
+    },
+    // Wave 9: Ghost army
+    {
+        name: "Ghost Army",
+        count: 30,
+        type: 'mixed',
+        types: ['ghost', 'ninja'],
+        interval: 1200,
+        bosses: []
+    },
+    // Wave 10: Final showdown
+    {
+        name: "Final Showdown",
+        count: 40,
+        type: 'mixed',
+        types: ['regular', 'fast', 'tank', 'ninja', 'ghost'],
+        interval: 1500,
+        bosses: [
+            { type: 'ghost', at: 10 },
+            { type: 'ghost', at: 20 },
+            { type: 'ninja', at: 30 },
+            { type: 'boss', at: 39 }
+        ]
     }
 ];
 
@@ -106,6 +166,19 @@ addWaveBtn.style.border = 'none';
 addWaveBtn.style.borderRadius = '5px';
 addWaveBtn.style.cursor = 'pointer';
 document.body.appendChild(addWaveBtn);
+
+// Add skip wave button
+const skipWaveBtn = document.createElement('button');
+skipWaveBtn.textContent = 'Skip Wave';
+skipWaveBtn.style.position = 'absolute';
+skipWaveBtn.style.top = '50px';
+skipWaveBtn.style.right = '10px';
+skipWaveBtn.style.padding = '10px';
+skipWaveBtn.style.backgroundColor = '#C8AA6E';
+skipWaveBtn.style.border = 'none';
+skipWaveBtn.style.borderRadius = '5px';
+skipWaveBtn.style.cursor = 'pointer';
+document.body.appendChild(skipWaveBtn);
 
 // Add wave button click handler
 addWaveBtn.addEventListener('click', () => {
@@ -162,6 +235,108 @@ addWaveBtn.addEventListener('click', () => {
     showMessage(`Wave ${waveNumber} Added!`, canvas.width/2, canvas.height/2);
 });
 
+// Skip wave button click handler
+skipWaveBtn.addEventListener('click', () => {
+    if (gameState.waveInProgress) {
+        // Clear all current enemies
+        gameState.enemies = [];
+        gameState.enemiesSpawned = WAVES[gameState.currentWave].count;
+        gameState.waveInProgress = false;
+        
+        // Move to next wave
+        gameState.currentWave++;
+        if (gameState.currentWave < WAVES.length) {
+            setTimeout(() => {
+                startWave();
+            }, 1000);
+        }
+    }
+});
+
+// Update game state
+function updateGame() {
+    // Update enemies
+    for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+        const enemy = gameState.enemies[i];
+        const reachedEnd = enemy.update();
+        
+        if (reachedEnd) {
+            gameState.lives--;
+            gameState.enemies.splice(i, 1);
+            if (gameState.lives <= 0) {
+                gameState.gameOver = true;
+                return;
+            }
+        } else if (enemy.health <= 0) {
+            gameState.money += enemy.reward;
+            gameState.score += enemy.reward;
+            gameState.enemies.splice(i, 1);
+        }
+    }
+
+    // Check if wave is complete
+    if (gameState.waveInProgress && gameState.enemiesSpawned >= WAVES[gameState.currentWave].count && gameState.enemies.length === 0) {
+        gameState.waveInProgress = false;
+        
+        // Show wave complete message
+        const wave = WAVES[gameState.currentWave];
+        showMessage(`${wave.name} Complete!`, canvas.width/2, canvas.height/2);
+        
+        // Check if all waves are complete
+        if (gameState.currentWave >= WAVES.length - 1) {
+            showVictoryScreen();
+            return;
+        }
+        
+        // Prepare for next wave
+        gameState.currentWave++;
+        startWaveBtn.disabled = false;
+        startWaveBtn.style.display = 'block';
+    }
+
+    // Update towers
+    for (const tower of gameState.towers) {
+        const projectile = tower.attack(gameState.enemies);
+        if (projectile) {
+            gameState.projectiles.push(projectile);
+        }
+    }
+
+    // Update projectiles
+    for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+        const projectile = gameState.projectiles[i];
+        if (projectile.reached) {
+            gameState.projectiles.splice(i, 1);
+        }
+    }
+}
+
+// Add start wave button
+function addStartWaveButton() {
+    const startWaveBtn = document.createElement('button');
+    startWaveBtn.textContent = 'Start Next Wave';
+    startWaveBtn.style.position = 'absolute';
+    startWaveBtn.style.top = '10px';
+    startWaveBtn.style.right = '10px';
+    startWaveBtn.style.padding = '10px';
+    startWaveBtn.style.backgroundColor = '#C8AA6E';
+    startWaveBtn.style.border = 'none';
+    startWaveBtn.style.borderRadius = '5px';
+    startWaveBtn.style.cursor = 'pointer';
+    startWaveBtn.style.display = 'block';
+    
+    startWaveBtn.addEventListener('click', () => {
+        if (!gameState.waveInProgress) {
+            startWave();
+            startWaveBtn.disabled = true;
+            startWaveBtn.style.display = 'none';
+        }
+    });
+    
+    document.body.appendChild(startWaveBtn);
+    return startWaveBtn;
+}
+
 // Wave management
 function startWave() {
     if (gameState.currentWave >= WAVES.length) {
@@ -175,30 +350,37 @@ function startWave() {
     gameState.enemiesSpawned = 0;
     gameState.waveInProgress = true;
 
-    // Show wave start message
-    showMessage(`Wave ${gameState.currentWave + 1} Starting!`, canvas.width/2, canvas.height/2);
+    // Show wave start message with wave name
+    const waveName = wave.name || `Wave ${gameState.currentWave + 1}`;
+    showMessage(`${waveName}\nSTART!`, canvas.width/2, canvas.height/2);
+
+    // Hide start wave button during wave
+    startWaveBtn.disabled = true;
+    startWaveBtn.style.display = 'none';
 
     // Spawn enemies at intervals
     const spawnInterval = setInterval(() => {
         if (gameState.enemiesSpawned >= wave.count) {
             clearInterval(spawnInterval);
-            gameState.waveInProgress = false;
             return;
         }
 
-        // Check if we should spawn a boss
+        // Get enemy type based on wave type
+        let enemyType;
+        if (wave.type === 'mixed') {
+            enemyType = wave.types[Math.floor(Math.random() * wave.types.length)];
+        } else if (wave.type === 'pattern') {
+            enemyType = wave.pattern[gameState.enemiesSpawned % wave.pattern.length];
+        } else {
+            enemyType = wave.type;
+        }
+
+        // Check for boss spawn points
         if (wave.bosses && wave.bosses.some(boss => boss.at === gameState.enemiesSpawned)) {
             const boss = wave.bosses.find(boss => boss.at === gameState.enemiesSpawned);
             gameState.enemies.push(new Enemy(boss.type, [...gameState.path], gameState.currentWave));
             showMessage(`${boss.type.toUpperCase()} INCOMING!`, canvas.width/2, canvas.height/2);
         } else {
-            // Regular enemy spawn
-            let enemyType;
-            if (wave.type === 'mixed') {
-                enemyType = wave.types[Math.floor(Math.random() * wave.types.length)];
-            } else {
-                enemyType = wave.type;
-            }
             gameState.enemies.push(new Enemy(enemyType, [...gameState.path], gameState.currentWave));
         }
 
@@ -361,27 +543,17 @@ function updateUI() {
     document.getElementById('wave').textContent = `Wave: ${gameState.currentWave}`;
 }
 
-// Add a "Start Next Wave" button
-function addStartWaveButton() {
-    const startWaveBtn = document.createElement('button');
-    startWaveBtn.id = 'start-wave-btn';
-    startWaveBtn.className = 'start-wave-btn';
-    startWaveBtn.textContent = 'Start Next Wave';
-    startWaveBtn.onclick = () => {
-        if (!gameState.waveInProgress) {
-            startWave();
-            startWaveBtn.style.display = 'none';
-        }
-    };
-    document.body.appendChild(startWaveBtn);
-    return startWaveBtn;
-}
-
 // Initialize the start wave button
 const startWaveBtn = addStartWaveButton();
 
 // Game initialization
 function initGame() {
+    // Cancel any existing game loop
+    if (gameState.gameLoop) {
+        cancelAnimationFrame(gameState.gameLoop);
+        gameState.gameLoop = null;
+    }
+
     // Reset game state
     gameState.money = 500;
     gameState.score = 0;
@@ -391,6 +563,7 @@ function initGame() {
     gameState.enemies = [];
     gameState.projectiles = [];
     gameState.selectedTower = null;
+    gameState.selectedTowerType = null;  // Reset selected tower type
     gameState.waveEnemies = [];
     gameState.waveInProgress = false;
     gameState.lastSpawnTime = 0;
@@ -399,106 +572,60 @@ function initGame() {
 
     // Reset wave display
     document.getElementById('current-wave').textContent = '1';
-    document.getElementById('total-waves').textContent = WAVES.length;
+    document.getElementById('total-waves').textContent = '10';
     document.getElementById('wave-bar').style.width = '0%';
     document.getElementById('enemy-list').innerHTML = '';
 
+    // Reset tower selection UI
+    document.querySelectorAll('.tower-option').forEach(opt => 
+        opt.style.border = '1px solid #C8AA6E');
+    document.getElementById('tower-details').classList.add('hidden');
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     // Start game loop
-    if (gameState.gameLoop) cancelAnimationFrame(gameState.gameLoop);
     gameLoop();
 
-    // Start first wave
-    startWave();
+    // Enable start wave button
+    startWaveBtn.disabled = false;
+    startWaveBtn.style.display = 'block';
 }
 
 // Main game loop
 function gameLoop() {
-    if (gameState.gameOver) return;
-
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Draw path
     drawPath();
     
-    // Update game state
-    updateGame();
-    
-    // Draw towers
-    for (const tower of gameState.towers) {
-        tower.draw(ctx);
+    // Only update if game is not over
+    if (!gameState.gameOver) {
+        // Update game state
+        updateGame();
+        
+        // Draw towers
+        for (const tower of gameState.towers) {
+            tower.draw(ctx);
+        }
+        
+        // Draw enemies
+        gameState.enemies.forEach(enemy => enemy.draw(ctx));
+        
+        // Draw projectiles
+        drawProjectiles();
+        
+        // Update UI
+        updateUI();
+        
+        // Continue game loop
+        gameState.gameLoop = requestAnimationFrame(gameLoop);
     }
-    
-    // Draw enemies
-    gameState.enemies.forEach(enemy => enemy.draw(ctx));
-    
-    // Draw projectiles
-    drawProjectiles();
-    
-    // Update UI
-    updateUI();
-    
-    // Continue game loop
-    gameState.gameLoop = requestAnimationFrame(gameLoop);
 }
 
 // Start the game when the page loads
 window.addEventListener('load', initGame);
-
-// Update game state
-function updateGame() {
-    // Update enemies
-    for (let i = gameState.enemies.length - 1; i >= 0; i--) {
-        const enemy = gameState.enemies[i];
-        const reachedEnd = enemy.update();
-
-        if (reachedEnd) {
-            gameState.lives--;
-            gameState.enemies.splice(i, 1);
-            
-            if (gameState.lives <= 0) {
-                alert('Game Over!');
-                initGame();
-                return;
-            }
-        } else if (enemy.health <= 0) {
-            gameState.money += enemy.reward;
-            gameState.score += enemy.reward;
-            gameState.enemies.splice(i, 1);
-        }
-    }
-
-    // Update wave progress
-    if (gameState.waveInProgress) {
-        const wave = WAVES[gameState.currentWave];
-        const totalEnemies = wave.count;
-        const remainingEnemies = wave.count - gameState.enemiesSpawned + gameState.enemies.length;
-    }
-
-    // Check if wave is complete and start next wave
-    if (gameState.enemies.length === 0 && !gameState.waveInProgress) {
-        setTimeout(() => {
-            gameState.currentWave++;
-            startWave();
-        }, 3000); // 3 second delay between waves
-    }
-
-    // Update towers
-    for (const tower of gameState.towers) {
-        const projectile = tower.attack(gameState.enemies);
-        if (projectile) {
-            gameState.projectiles.push(projectile);
-        }
-    }
-
-    // Update projectiles
-    for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
-        const projectile = gameState.projectiles[i];
-        if (projectile.reached) {
-            gameState.projectiles.splice(i, 1);
-        }
-    }
-}
 
 // Add upgrade event listeners
 document.getElementById('upgrade-damage').addEventListener('click', () => {
