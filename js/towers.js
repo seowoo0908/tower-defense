@@ -1,14 +1,14 @@
-// Tower Types based on League of Legends Champions
-const TOWER_TYPES = {
+// Turret Types based on League of Legends Champions
+const TURRET_TYPES = {
     LUX: {
-        name: 'Lux Tower',
+        name: 'Lux Turret',
         cost: 300,
         damage: 150,
         range: 200,
         attackSpeed: 1,
         color: '#E8D661',
         special: 'Light Binding',
-        description: 'Long range mage tower that deals magic damage',
+        description: 'Long range mage turret that deals magic damage',
         specialAbility: function(target) {
             // Root effect
             target.speed = 0;
@@ -18,7 +18,7 @@ const TOWER_TYPES = {
         }
     },
     ASHE: {
-        name: 'Ashe Tower',
+        name: 'Ashe Turret',
         cost: 250,
         damage: 100,
         range: 250,
@@ -35,14 +35,14 @@ const TOWER_TYPES = {
         }
     },
     BRAND: {
-        name: 'Brand Tower',
+        name: 'Brand Turret',
         cost: 400,
         damage: 200,
         range: 150,
         attackSpeed: 0.8,
         color: '#FF4C4C',
         special: 'Blaze',
-        description: 'Area damage tower with burn effect',
+        description: 'Area damage turret with burn effect',
         specialAbility: function(target) {
             // Burn effect
             const burnDamage = this.damage * 0.2;
@@ -57,7 +57,7 @@ const TOWER_TYPES = {
         }
     },
     THRESH: {
-        name: 'Thresh Tower',
+        name: 'Thresh Turret',
         cost: 350,
         damage: 80,
         range: 175,
@@ -79,29 +79,30 @@ const TOWER_TYPES = {
     }
 };
 
-class Tower {
+class Turret {
     constructor(type, x, y) {
-        const towerData = TOWER_TYPES[type];
+        const turretData = TURRET_TYPES[type];
         this.type = type;
         this.x = x;
         this.y = y;
-        this.name = towerData.name;
-        this.damage = towerData.damage;
-        this.range = towerData.range;
-        this.attackSpeed = towerData.attackSpeed;
-        this.color = towerData.color;
-        this.special = towerData.special;
-        this.description = towerData.description;
-        this.specialAbility = towerData.specialAbility;
+        this.name = turretData.name;
+        this.damage = turretData.damage;
+        this.range = turretData.range;
+        this.attackSpeed = turretData.attackSpeed;
+        this.color = turretData.color;
+        this.special = turretData.special;
+        this.description = turretData.description;
+        this.specialAbility = turretData.specialAbility;
         this.lastAttack = 0;
         this.level = 1;
         this.target = null;
-        this.cost = towerData.cost;
+        this.cost = turretData.cost;
         this.selected = false;
+        this.angle = 0;
         
         // Track investments for selling
         this.investments = {
-            initial: towerData.cost,
+            initial: turretData.cost,
             damage: 0,
             range: 0,
             speed: 0
@@ -154,91 +155,91 @@ class Tower {
     }
 
     attack(enemies) {
-        this.findTarget(enemies);
-        
-        if (this.target && this.canAttack()) {
-            const distance = Math.hypot(this.x - this.target.x, this.y - this.target.y);
-            
+        if (enemies.length === 0) {
+            this.target = null;
+            return null;
+        }
+
+        const now = Date.now();
+        if (now - this.lastAttack < 1000 / this.attackSpeed) {
+            // Update angle even when not attacking
+            if (this.target && this.target.health > 0) {
+                const dx = this.target.x - this.x;
+                const dy = this.target.y - this.y;
+                this.angle = Math.atan2(dy, dx);
+            }
+            return null;
+        }
+
+        // Find target
+        if (!this.target || this.target.health <= 0) {
+            this.target = enemies.find(enemy => {
+                const distance = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+                return distance <= this.range;
+            });
+        }
+
+        if (this.target) {
+            const distance = Math.hypot(this.target.x - this.x, this.target.y - this.y);
             if (distance <= this.range) {
+                // Update angle
+                const dx = this.target.x - this.x;
+                const dy = this.target.y - this.y;
+                this.angle = Math.atan2(dy, dx);
+
+                // Attack
+                this.lastAttack = now;
                 this.target.health -= this.damage;
                 this.specialAbility(this.target);
-                this.lastAttack = Date.now();
-                
-                // Create visual effect for attack
+
+                // Return projectile data
                 return {
-                    from: { x: this.x, y: this.y },
-                    to: { x: this.target.x, y: this.target.y },
-                    color: this.color
+                    x: this.x,
+                    y: this.y,
+                    targetX: this.target.x,
+                    targetY: this.target.y,
+                    color: this.color,
+                    reached: false
                 };
             } else {
                 this.target = null;
             }
         }
+
         return null;
     }
 
     draw(ctx) {
-        // Draw cat tower
-        // Body
+        // Draw base
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 20, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
+        ctx.arc(this.x, this.y, 15, 0, Math.PI * 2);
+        ctx.fillStyle = '#666';
         ctx.fill();
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Ears
-        // Left ear
+        // Draw turret top
         ctx.beginPath();
-        ctx.moveTo(this.x - 15, this.y - 15);
-        ctx.lineTo(this.x - 20, this.y - 25);
-        ctx.lineTo(this.x - 10, this.y - 15);
+        ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
         ctx.fill();
         ctx.stroke();
 
-        // Right ear
+        // Draw gun barrel
         ctx.beginPath();
-        ctx.moveTo(this.x + 15, this.y - 15);
-        ctx.lineTo(this.x + 20, this.y - 25);
-        ctx.lineTo(this.x + 10, this.y - 15);
-        ctx.fillStyle = this.color;
-        ctx.fill();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x + Math.cos(this.angle) * 20, this.y + Math.sin(this.angle) * 20);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = this.color;
         ctx.stroke();
-
-        // Whiskers
-        ctx.beginPath();
-        ctx.moveTo(this.x - 20, this.y);
-        ctx.lineTo(this.x - 30, this.y - 5);
-        ctx.moveTo(this.x - 20, this.y);
-        ctx.lineTo(this.x - 30, this.y + 5);
-        ctx.moveTo(this.x + 20, this.y);
-        ctx.lineTo(this.x + 30, this.y - 5);
-        ctx.moveTo(this.x + 20, this.y);
-        ctx.lineTo(this.x + 30, this.y + 5);
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Eyes
-        ctx.beginPath();
-        ctx.arc(this.x - 7, this.y - 5, 3, 0, Math.PI * 2);
-        ctx.arc(this.x + 7, this.y - 5, 3, 0, Math.PI * 2);
-        ctx.fillStyle = '#000';
-        ctx.fill();
-
-        // Draw level indicator
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(this.level, this.x, this.y + 15);
 
         // Draw range circle when selected
         if (this.selected) {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
             ctx.stroke();
         }
     }

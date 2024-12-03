@@ -26,20 +26,20 @@
         </div>
         
         <div class="tower-selection">
-            <h3>Available Towers</h3>
+            <h3>Available Turrets</h3>
             <div class="tower-options">
                 <div class="tower-option" data-tower="LUX">
                     <div class="tower-icon lux"></div>
                     <div class="tower-info">
-                        <h4>Lux Tower</h4>
+                        <h4>Lux Turret</h4>
                         <p>Cost: 300</p>
-                        <p>Long range mage tower</p>
+                        <p>Long range mage turret</p>
                     </div>
                 </div>
                 <div class="tower-option" data-tower="ASHE">
                     <div class="tower-icon ashe"></div>
                     <div class="tower-info">
-                        <h4>Ashe Tower</h4>
+                        <h4>Ashe Turret</h4>
                         <p>Cost: 250</p>
                         <p>Slows enemies</p>
                     </div>
@@ -47,7 +47,7 @@
                 <div class="tower-option" data-tower="BRAND">
                     <div class="tower-icon brand"></div>
                     <div class="tower-info">
-                        <h4>Brand Tower</h4>
+                        <h4>Brand Turret</h4>
                         <p>Cost: 400</p>
                         <p>Area damage + burn</p>
                     </div>
@@ -55,7 +55,7 @@
                 <div class="tower-option" data-tower="THRESH">
                     <div class="tower-icon thresh"></div>
                     <div class="tower-info">
-                        <h4>Thresh Tower</h4>
+                        <h4>Thresh Turret</h4>
                         <p>Cost: 350</p>
                         <p>Hooks enemies</p>
                     </div>
@@ -65,7 +65,7 @@
         
         <div id="tower-details" class="tower-details hidden">
             <div class="tower-details-header">
-                <h3>Tower Details</h3>
+                <h3>Turret Details</h3>
                 <button id="close-details" class="close-btn">&times;</button>
             </div>
             <div id="selected-tower-info">
@@ -98,7 +98,21 @@
                     <button class="cancel-upgrade">&times;</button>
                 </div>
             </div>
-            <button id="sell-tower" class="sell-btn">Sell Tower</button>
+            <button id="sell-tower" class="sell-btn">Sell Turret</button>
+        </div>
+        
+        <div id="placement-details" class="hidden">
+            <h3>Placing Turret</h3>
+            <div class="turret-preview"></div>
+            <div class="turret-stats">
+                <p id="preview-name"></p>
+                <p id="preview-damage"></p>
+                <p id="preview-range"></p>
+                <p id="preview-speed"></p>
+                <p id="preview-special"></p>
+                <p id="preview-description"></p>
+            </div>
+            <p class="hint">Right-click to cancel placement</p>
         </div>
     </div>
 

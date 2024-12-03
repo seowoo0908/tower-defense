@@ -1,58 +1,3 @@
-// Enemy types configuration
-const ENEMY_TYPES = {
-    regular: {
-        health: 100,
-        speed: 1,
-        reward: 10,
-        damage: 1,
-        color: 'gray',
-        size: 15
-    },
-    fast: {
-        health: 75,
-        speed: 2,
-        reward: 15,
-        damage: 1,
-        color: 'lightblue',
-        size: 12
-    },
-    tank: {
-        health: 300,
-        speed: 0.7,
-        reward: 20,
-        damage: 2,
-        color: 'darkgreen',
-        size: 20
-    },
-    ninja: {
-        health: 150,
-        speed: 1.5,
-        reward: 25,
-        damage: 2,
-        color: 'black',
-        size: 13,
-        isNinja: true
-    },
-    ghost: {  
-        health: 200,
-        speed: 1.3,
-        reward: 30,
-        damage: 3,
-        color: 'rgba(255, 255, 255, 0.7)',
-        size: 16,
-        isGhost: true
-    },
-    boss: {
-        health: 1000,
-        speed: 0.5,
-        reward: 100,
-        damage: 5,
-        color: 'purple',
-        size: 30,
-        isBoss: true
-    }
-};
-
 class Enemy {
     constructor(type, path, wave) {
         const enemyData = ENEMY_TYPES[type];
@@ -156,40 +101,31 @@ class Enemy {
         ctx.fill();
         ctx.stroke();
 
-        // Draw eyes
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(-this.size/4, -this.size/6, this.size/8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(this.size/4, -this.size/6, this.size/8, 0, Math.PI * 2);
-        ctx.fill();
-
         // Draw nose
         ctx.beginPath();
-        ctx.arc(0, 0, this.size/6, 0, Math.PI * 2);
+        ctx.arc(this.size * 0.8, 0, this.size/4, 0, Math.PI * 2);
+        ctx.fillStyle = '#FF9999';
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw eyes (red for ghost mice)
+        ctx.fillStyle = this.type === 'ghost' ? 'red' : 'black';
+        ctx.beginPath();
+        ctx.arc(this.size/3, -this.size/4, this.size/6, 0, Math.PI * 2);
+        ctx.arc(-this.size/3, -this.size/4, this.size/6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw whiskers
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        // Left whiskers
+        // Draw tail
         ctx.beginPath();
-        ctx.moveTo(-this.size/4, 0);
-        ctx.lineTo(-this.size, -this.size/4);
-        ctx.moveTo(-this.size/4, 0);
-        ctx.lineTo(-this.size, 0);
-        ctx.moveTo(-this.size/4, 0);
-        ctx.lineTo(-this.size, this.size/4);
-        ctx.stroke();
-        // Right whiskers
-        ctx.beginPath();
-        ctx.moveTo(this.size/4, 0);
-        ctx.lineTo(this.size, -this.size/4);
-        ctx.moveTo(this.size/4, 0);
-        ctx.lineTo(this.size, 0);
-        ctx.moveTo(this.size/4, 0);
-        ctx.lineTo(this.size, this.size/4);
+        ctx.moveTo(-this.size, 0);
+        ctx.quadraticCurveTo(
+            -this.size * 1.5,
+            -this.size/2,
+            -this.size * 2,
+            0
+        );
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 3;
         ctx.stroke();
 
         // Restore context state
@@ -208,6 +144,56 @@ class Enemy {
     }
 }
 
-// Make Enemy class available globally
-window.Enemy = Enemy;
-window.ENEMY_TYPES = ENEMY_TYPES;
+const ENEMY_TYPES = {
+    regular: {
+        health: 100,
+        speed: 1,
+        reward: 15,
+        damage: 1,
+        color: 'gray',
+        size: 15
+    },
+    fast: {
+        health: 75,
+        speed: 2,
+        reward: 25,
+        damage: 1,
+        color: 'lightblue',
+        size: 12
+    },
+    tank: {
+        health: 300,
+        speed: 0.7,
+        reward: 35,
+        damage: 2,
+        color: 'darkgreen',
+        size: 20
+    },
+    ninja: {
+        health: 150,
+        speed: 1.5,
+        reward: 40,
+        damage: 2,
+        color: 'black',
+        size: 13,
+        isNinja: true
+    },
+    ghost: {  
+        health: 200,
+        speed: 1.3,
+        reward: 45,
+        damage: 3,
+        color: 'rgba(255, 255, 255, 0.7)',
+        size: 16,
+        isGhost: true
+    },
+    boss: {
+        health: 1000,
+        speed: 0.5,
+        reward: 200,
+        damage: 5,
+        color: 'purple',
+        size: 30,
+        isBoss: true
+    }
+};
