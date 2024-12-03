@@ -3,18 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tower Defense Game</title>
+    <title>LoL Tower Defense</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="game-container">
-        <canvas id="gameCanvas"></canvas>
         <div class="game-ui">
             <div id="score">Score: 0</div>
-            <div id="money">Money: 100</div>
-            <div id="lives">Lives: 10</div>
+            <div id="money">Money: 500</div>
+            <div id="lives">Lives: 20</div>
+            <div id="wave">Wave: 1/7</div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="tower-selection">
+            <h3>Available Towers</h3>
+            <div class="tower-options">
+                <div class="tower-option" data-tower="LUX">
+                    <div class="tower-icon lux"></div>
+                    <div class="tower-info">
+                        <h4>Lux Tower</h4>
+                        <p>Cost: 300</p>
+                        <p>Long range mage tower</p>
+                    </div>
+                </div>
+                <div class="tower-option" data-tower="ASHE">
+                    <div class="tower-icon ashe"></div>
+                    <div class="tower-info">
+                        <h4>Ashe Tower</h4>
+                        <p>Cost: 250</p>
+                        <p>Slows enemies</p>
+                    </div>
+                </div>
+                <div class="tower-option" data-tower="BRAND">
+                    <div class="tower-icon brand"></div>
+                    <div class="tower-info">
+                        <h4>Brand Tower</h4>
+                        <p>Cost: 400</p>
+                        <p>Area damage + burn</p>
+                    </div>
+                </div>
+                <div class="tower-option" data-tower="THRESH">
+                    <div class="tower-icon thresh"></div>
+                    <div class="tower-info">
+                        <h4>Thresh Tower</h4>
+                        <p>Cost: 350</p>
+                        <p>Hooks enemies</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tower-details" class="tower-details hidden">
+            <h3>Tower Details</h3>
+            <div id="selected-tower-info"></div>
+            <button id="upgrade-tower">Upgrade (150g)</button>
+            <button id="sell-tower">Sell</button>
         </div>
     </div>
+
+    <script src="js/towers.js"></script>
+    <script src="js/enemies.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

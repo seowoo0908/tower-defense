@@ -1,33 +1,133 @@
 body {
     margin: 0;
-    padding: 0;
+    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #2c3e50;
+    background-color: #0A1428;
+    font-family: Arial, sans-serif;
+    color: #C8AA6E;
 }
 
 .game-container {
     position: relative;
+    display: flex;
+    gap: 20px;
 }
 
 #gameCanvas {
-    border: 2px solid #34495e;
-    background-color: #ecf0f1;
+    border: 3px solid #C8AA6E;
+    background-color: #091428;
 }
 
 .game-ui {
     position: absolute;
     top: 10px;
     left: 10px;
-    color: white;
-    font-family: Arial, sans-serif;
-    background-color: rgba(0, 0, 0, 0.7);
-    padding: 10px;
+    color: #C8AA6E;
+    background-color: rgba(10, 20, 40, 0.8);
+    padding: 15px;
     border-radius: 5px;
+    border: 1px solid #C8AA6E;
 }
 
 .game-ui div {
     margin: 5px 0;
+    font-size: 18px;
+}
+
+.tower-selection {
+    width: 250px;
+    background-color: rgba(10, 20, 40, 0.9);
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #C8AA6E;
+}
+
+.tower-selection h3 {
+    margin: 0 0 15px 0;
+    text-align: center;
+    color: #F0E6D2;
+}
+
+.tower-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tower-option {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: #1E2328;
+    border: 1px solid #C8AA6E;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tower-option:hover {
+    background-color: #2F353B;
+}
+
+.tower-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.tower-icon.lux { background-color: #E8D661; }
+.tower-icon.ashe { background-color: #A1DBF1; }
+.tower-icon.brand { background-color: #FF4C4C; }
+.tower-icon.thresh { background-color: #50C878; }
+
+.tower-info {
+    flex-grow: 1;
+}
+
+.tower-info h4 {
+    margin: 0 0 5px 0;
+    color: #F0E6D2;
+}
+
+.tower-info p {
+    margin: 2px 0;
+    font-size: 12px;
+}
+
+.tower-details {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(10, 20, 40, 0.9);
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #C8AA6E;
+}
+
+.tower-details.hidden {
+    display: none;
+}
+
+button {
+    background-color: #1E2328;
+    color: #C8AA6E;
+    border: 1px solid #C8AA6E;
+    padding: 8px 15px;
+    margin: 5px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #2F353B;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
