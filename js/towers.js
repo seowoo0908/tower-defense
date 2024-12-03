@@ -97,13 +97,40 @@ class Tower {
         this.level = 1;
         this.target = null;
         this.cost = towerData.cost;
+        this.selected = false;
+        
+        // Track investments for selling
+        this.investments = {
+            initial: towerData.cost,
+            damage: 0,
+            range: 0,
+            speed: 0
+        };
     }
 
-    upgrade() {
-        this.level++;
+    getTotalInvestment() {
+        return this.investments.initial + 
+               this.investments.damage + 
+               this.investments.range + 
+               this.investments.speed;
+    }
+
+    upgradeDamage() {
         this.damage *= 1.5;
+        this.investments.damage += 100;
+        this.level++;
+    }
+
+    upgradeRange() {
         this.range *= 1.2;
-        this.attackSpeed *= 1.2;
+        this.investments.range += 75;
+        this.level++;
+    }
+
+    upgradeSpeed() {
+        this.attackSpeed *= 1.3;
+        this.investments.speed += 125;
+        this.level++;
     }
 
     canAttack() {

@@ -1,65 +1,35 @@
 class Enemy {
-    constructor(path, type = 'MINION') {
-        this.path = [...path];
+    constructor(type, path, wave) {
+        const enemyData = ENEMY_TYPES[type];
+        this.type = type;
         this.x = path[0].x;
         this.y = path[0].y;
-        this.currentPathIndex = 0;
-        
-        // Enemy types based on LoL minions and monsters
-        const types = {
-            MINION: {
-                health: 100,
-                speed: 1,
-                value: 10,
-                size: 15,
-                color: '#8B8B8B' // Gray mouse
-            },
-            CANNON_MINION: {
-                health: 200,
-                speed: 0.8,
-                value: 20,
-                size: 20,
-                color: '#A0522D' // Brown mouse
-            },
-            SUPER_MINION: {
-                health: 400,
-                speed: 0.6,
-                value: 30,
-                size: 25,
-                color: '#696969' // Dark gray mouse
-            },
-            BARON: {
-                health: 1000,
-                speed: 0.3,
-                value: 100,
-                size: 35,
-                color: '#2F4F4F' // Dark slate gray mouse (boss)
-            }
-        };
-
-        const enemyType = types[type];
-        this.maxHealth = enemyType.health;
-        this.health = enemyType.health;
-        this.speed = enemyType.speed;
-        this.originalSpeed = enemyType.speed;
-        this.value = enemyType.value;
-        this.size = enemyType.size;
-        this.color = enemyType.color;
-        this.type = type;
+        this.path = [...path];
+        this.pathIndex = 0;
+        this.speed = enemyData.speed * (1 + wave * 0.1); // Enemies get faster each wave
+        this.health = enemyData.health * (1 + wave * 0.2); // Enemies get more health each wave
+        this.maxHealth = this.health;
+        this.reward = Math.floor(enemyData.reward * (1 + wave * 0.1)); // Rewards increase with waves
+        this.damage = enemyData.damage;
+        this.color = enemyData.color;
+        this.size = enemyData.size || 15;
+        this.isBoss = enemyData.isBoss || false;
+        this.isNinja = enemyData.isNinja || false;
+        this.isGhost = enemyData.isGhost || false;
         this.effects = [];
     }
 
     update() {
-        if (this.currentPathIndex >= this.path.length - 1) return true;
+        if (this.pathIndex >= this.path.length - 1) return true;
 
-        const targetPoint = this.path[this.currentPathIndex + 1];
+        const targetPoint = this.path[this.pathIndex + 1];
         const dx = targetPoint.x - this.x;
         const dy = targetPoint.y - this.y;
         const distance = Math.hypot(dx, dy);
 
         if (distance < this.speed) {
-            this.currentPathIndex++;
-            if (this.currentPathIndex >= this.path.length - 1) return true;
+            this.pathIndex++;
+            if (this.pathIndex >= this.path.length - 1) return true;
         } else {
             this.x += (dx / distance) * this.speed;
             this.y += (dy / distance) * this.speed;
@@ -74,16 +44,45 @@ class Enemy {
         
         // Rotate the mouse based on movement direction
         const angle = Math.atan2(
-            this.y - this.path[this.currentPathIndex].y,
-            this.x - this.path[this.currentPathIndex].x
+            this.y - this.path[this.pathIndex].y,
+            this.x - this.path[this.pathIndex].x
         );
         ctx.translate(this.x, this.y);
         ctx.rotate(angle + Math.PI);
+
+        // Draw ghost mouse with special effects
+        if (this.type === 'ghost') {
+            // Ghost floating effect
+            const floatOffset = Math.sin(Date.now() / 200) * 5;
+            ctx.translate(0, floatOffset);
+            
+            // Ghost trail effect
+            ctx.globalAlpha = 0.3;
+            for (let i = 1; i <= 3; i++) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.beginPath();
+                ctx.arc(-i * 8, 0, this.size * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draw ninja mouse effects
+        if (this.type === 'ninja') {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(-this.size/2, -this.size/2 - 3, this.size, 3);
+            
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(-10, 0, this.size * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+        }
         
         // Draw mouse body
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.ellipse(0, 0, this.size, this.size * 0.7, 0, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
         ctx.fill();
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
@@ -109,11 +108,11 @@ class Enemy {
         ctx.fill();
         ctx.stroke();
 
-        // Draw eyes
+        // Draw eyes (red for ghost mice)
+        ctx.fillStyle = this.type === 'ghost' ? 'red' : 'black';
         ctx.beginPath();
         ctx.arc(this.size/3, -this.size/4, this.size/6, 0, Math.PI * 2);
         ctx.arc(-this.size/3, -this.size/4, this.size/6, 0, Math.PI * 2);
-        ctx.fillStyle = '#000';
         ctx.fill();
 
         // Draw tail
@@ -144,3 +143,57 @@ class Enemy {
         ctx.fillRect(this.x - healthBarWidth/2, this.y - this.size - 10, healthBarWidth * healthPercentage, healthBarHeight);
     }
 }
+
+const ENEMY_TYPES = {
+    regular: {
+        health: 100,
+        speed: 1,
+        reward: 10,
+        damage: 1,
+        color: 'gray',
+        size: 15
+    },
+    fast: {
+        health: 75,
+        speed: 2,
+        reward: 15,
+        damage: 1,
+        color: 'lightblue',
+        size: 12
+    },
+    tank: {
+        health: 300,
+        speed: 0.7,
+        reward: 20,
+        damage: 2,
+        color: 'darkgreen',
+        size: 20
+    },
+    ninja: {
+        health: 150,
+        speed: 1.5,
+        reward: 25,
+        damage: 2,
+        color: 'black',
+        size: 13,
+        isNinja: true
+    },
+    ghost: {  
+        health: 200,
+        speed: 1.3,
+        reward: 30,
+        damage: 3,
+        color: 'rgba(255, 255, 255, 0.7)',
+        size: 16,
+        isGhost: true
+    },
+    boss: {
+        health: 1000,
+        speed: 0.5,
+        reward: 100,
+        damage: 5,
+        color: 'purple',
+        size: 30,
+        isBoss: true
+    }
+};

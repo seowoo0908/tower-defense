@@ -15,7 +15,15 @@
             <div id="wave">Wave: 1/7</div>
         </div>
         
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div id="wave-info">
+            <div>Wave <span id="current-wave">0</span> / <span id="total-waves">0</span></div>
+            <div id="wave-enemies">Spawning: <span id="enemy-list"></span></div>
+            <div id="wave-progress">
+                <div id="wave-bar"></div>
+            </div>
+        </div>
         
         <div class="tower-selection">
             <h3>Available Towers</h3>
@@ -56,10 +64,41 @@
         </div>
         
         <div id="tower-details" class="tower-details hidden">
-            <h3>Tower Details</h3>
-            <div id="selected-tower-info"></div>
-            <button id="upgrade-tower">Upgrade (150g)</button>
-            <button id="sell-tower">Sell</button>
+            <div class="tower-details-header">
+                <h3>Tower Details</h3>
+                <button id="close-details" class="close-btn">&times;</button>
+            </div>
+            <div id="selected-tower-info">
+                <p id="tower-name"></p>
+                <p id="tower-level"></p>
+                <p id="tower-damage"></p>
+                <p id="tower-range"></p>
+                <p id="tower-speed"></p>
+            </div>
+            <div class="upgrade-options">
+                <div class="upgrade-item">
+                    <button id="upgrade-damage" class="upgrade-btn">
+                        Upgrade Damage (100g)
+                        <span class="upgrade-bonus">+50% Damage</span>
+                    </button>
+                    <button class="cancel-upgrade">&times;</button>
+                </div>
+                <div class="upgrade-item">
+                    <button id="upgrade-range" class="upgrade-btn">
+                        Upgrade Range (75g)
+                        <span class="upgrade-bonus">+20% Range</span>
+                    </button>
+                    <button class="cancel-upgrade">&times;</button>
+                </div>
+                <div class="upgrade-item">
+                    <button id="upgrade-speed" class="upgrade-btn">
+                        Upgrade Speed (125g)
+                        <span class="upgrade-bonus">+30% Speed</span>
+                    </button>
+                    <button class="cancel-upgrade">&times;</button>
+                </div>
+            </div>
+            <button id="sell-tower" class="sell-btn">Sell Tower</button>
         </div>
     </div>
 
