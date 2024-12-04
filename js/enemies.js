@@ -6,12 +6,12 @@ class Enemy {
         this.y = path[0].y;
         this.path = [...path];
         this.pathIndex = 0;
-        this.speed = enemyData.speed * (1 + wave * 0.5); // 5x more speed scaling per wave!!!
+        this.speed = enemyData.speed * (1 + wave * 0.2); // Reduced speed scaling
         // Convert health to number and handle wave scaling
-        this.health = Number(enemyData.health) * (1 + wave * 1.0); // Convert BigInt to Number first!
+        this.health = Number(enemyData.health) * (1 + wave * 0.5); // Reduced health scaling
         this.maxHealth = this.health;
-        this.reward = Math.floor(enemyData.reward * (1 + wave * 0.3)); // 3x more reward scaling!!!
-        this.damage = enemyData.damage * (1 + wave * 0.5); // NEW: Damage now scales with waves!!!
+        this.reward = Math.floor(enemyData.reward * (1 + wave * 0.3)); // Kept reward scaling
+        this.damage = enemyData.damage * (1 + wave * 0.2); // Reduced damage scaling
         this.color = enemyData.color;
         this.size = enemyData.size || 15;
         this.isBoss = enemyData.isBoss || false;
@@ -158,43 +158,43 @@ class Enemy {
 
 const ENEMY_TYPES = {
     regular: {
-        health: 100,
-        speed: 1.0,  // Faster but not too fast
+        health: 60,  // Reduced from 100
+        speed: 0.8,  // Slower
         reward: 25,
-        damage: 10,
+        damage: 5,   // Less damage
         color: 'gray',
         size: 15
     },
     fast: {
-        health: 80,
-        speed: 1.5,  // Faster but not too fast
+        health: 45,  // Reduced from 80
+        speed: 1.3,  // Still fast but not too fast
         reward: 30,
-        damage: 10,
+        damage: 5,   // Less damage
         color: 'lightblue',
         size: 12
     },
     tank: {
-        health: 200,
-        speed: 0.7,  // Faster but not too fast
+        health: 150, // Reduced from 200
+        speed: 0.6,  // Slower
         reward: 50,
-        damage: 20,
+        damage: 10,  // Less damage
         color: 'darkgreen',
         size: 20
     },
     ninja: {
-        health: 150,
-        speed: 1.2,  // Faster but not too fast
+        health: 80,  // Reduced from 150
+        speed: 1.1,  // Slightly slower
         reward: 60,
-        damage: 20,
+        damage: 8,   // Less damage
         color: 'black',
         size: 13,
         isNinja: true
     },
     ghost: {
-        health: 175,
-        speed: 0.8,  // Faster but not too fast
+        health: 100, // Reduced from 175
+        speed: 0.7,  // Slower
         reward: 75,
-        damage: 25,
+        damage: 12,  // Less damage
         color: 'rgba(255, 255, 255, 0.7)',
         size: 16,
         isGhost: true
@@ -203,7 +203,7 @@ const ENEMY_TYPES = {
         health: 500,
         speed: 0.5,  // Faster but not too fast
         reward: 250,
-        damage: 50,
+        damage: 50, // Less damage
         color: 'purple',
         size: 30,
         isBoss: true

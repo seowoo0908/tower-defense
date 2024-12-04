@@ -305,8 +305,8 @@ function distanceToLine(x, y, x1, y1, x2, y2) {
 // Generate an infinite wave
 function generateWave(waveNumber) {
     // Base stats that increase with wave number
-    const baseCount = Math.min(5 + waveNumber * 2, 100);  // Reduced max enemies to 100
-    const baseInterval = Math.max(2000 - waveNumber * 50, 500);  // Slower spawning, min 500ms
+    const baseCount = Math.min(15 + waveNumber * 5, 200);  // More enemies: starts at 15, +5 per wave, max 200
+    const baseInterval = Math.max(1000 - waveNumber * 50, 300);  // Faster spawning, min 300ms
     
     // Special wave types
     const isSpecialWave = waveNumber % 5 === 0;  // Every 5th wave is special
@@ -316,25 +316,25 @@ function generateWave(waveNumber) {
         switch(waveNumber % 15) {
             case 0:  // Boss Rush (every 15th wave)
                 return {
-                    count: 3 + Math.floor(waveNumber / 15),
+                    count: 5 + Math.floor(waveNumber / 10),  // More bosses
                     type: 'boss_rush',
                     types: ['boss'],
-                    interval: 5000,
+                    interval: 3000,  // Faster boss spawning
                     bosses: [{ type: 'boss', at: 0 }]
                 };
             case 5:  // Speed Rush (every 5th wave not divisible by 15)
                 return {
-                    count: Math.min(20 + waveNumber, 50),
+                    count: Math.min(30 + waveNumber * 2, 100),  // Many more fast enemies
                     type: 'speed_rush',
                     types: ['fast', 'ninja'],
-                    interval: 300,
+                    interval: 200,  // Very fast spawning
                 };
             case 10:  // Tank Parade (every 10th wave not divisible by 15)
                 return {
-                    count: Math.min(5 + Math.floor(waveNumber/10), 15),
+                    count: Math.min(10 + Math.floor(waveNumber/5), 30),  // More tanks
                     type: 'tank_parade',
                     types: ['tank'],
-                    interval: 3000,
+                    interval: 2000,
                     bosses: [{ type: 'tank', at: Math.floor(baseCount * 0.5) }]
                 };
         }
@@ -348,13 +348,13 @@ function generateWave(waveNumber) {
     if (waveNumber >= 6) types.push('ghost');
 
     // Calculate number of mini-bosses based on wave
-    const numBosses = Math.min(Math.floor(waveNumber / 8), 3);  // Max 3 bosses in regular waves
+    const numBosses = Math.min(Math.floor(waveNumber / 6), 5);  // More bosses: max 5
     let bosses = [];
     if (numBosses > 0) {
         const bossTypes = ['tank', 'ninja', 'ghost'];
         for (let i = 0; i < numBosses; i++) {
-            const bossType = bossTypes[Math.min(Math.floor(waveNumber / 10), bossTypes.length - 1)];
-            const position = Math.floor(baseCount * (0.6 + i * 0.15));  // Space out bosses
+            const bossType = bossTypes[Math.min(Math.floor(waveNumber / 8), bossTypes.length - 1)];
+            const position = Math.floor(baseCount * (0.5 + i * 0.1));  // Space out bosses better
             bosses.push({ type: bossType, at: position });
         }
     }
@@ -1217,5 +1217,5 @@ function showVictoryScreen() {
     });
     
     // Stop the game loop
-    gameState.gameOver = true;
-}
+    gameState.gameOver =true;
+    

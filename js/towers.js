@@ -3,43 +3,43 @@ const TURRET_TYPES = {
     LUX: {
         name: 'Lux Turret',
         cost: 300,
-        damage: 20,  // Reduced from 50
+        damage: 30,  // Increased from 20
         range: 150,
-        attackSpeed: 0.8,  // Slightly slower
+        attackSpeed: 0.9,
         color: '#E8D661',
         special: 'Light Binding',
         description: 'Long range mage turret that deals magic damage',
         specialAbility: function(target) {
             // Root effect
-            target.speed = target.originalSpeed * 0.7;  // Less slow
+            target.speed = target.originalSpeed * 0.6;  // Stronger slow
             setTimeout(() => {
                 if (target) target.speed = target.originalSpeed;
-            }, 800);  // Shorter duration
+            }, 1000);  // Longer duration
         }
     },
     ASHE: {
         name: 'Ashe Turret',
         cost: 250,
-        damage: 15,  // Reduced from 35
+        damage: 20,  // Increased from 15
         range: 200,
-        attackSpeed: 1.2,  // Slightly slower
+        attackSpeed: 1.3,
         color: '#A1DBF1',
         special: 'Frost Shot',
         description: 'Slows enemies with each attack',
         specialAbility: function(target) {
             // Slow effect
-            target.speed = target.originalSpeed * 0.7;  // Less slow
+            target.speed = target.originalSpeed * 0.6;  // Stronger slow
             setTimeout(() => {
                 if (target) target.speed = target.originalSpeed;
-            }, 800);  // Shorter duration
+            }, 1000);  // Longer duration
         }
     },
     FIRE: {
         name: 'Fire Turret',
         cost: 300,
-        damage: 25,  // Reduced from 60
+        damage: 35,  // Increased from 25
         range: 150,
-        attackSpeed: 0.8,  // Slightly slower
+        attackSpeed: 0.9,
         color: '#FF4C4C',
         special: 'Fire Shot',
         description: 'Simple fire damage turret'
@@ -47,22 +47,19 @@ const TURRET_TYPES = {
     THRESH: {
         name: 'Thresh Turret',
         cost: 350,
-        damage: 18,  // Reduced from 40
+        damage: 25,  // Increased from 18
         range: 125,
-        attackSpeed: 0.5,
+        attackSpeed: 0.8,
         color: '#50C878',
         special: 'Death Sentence',
-        description: 'Hooks and holds enemies in place',
+        description: 'Hooks and pulls enemies',
         specialAbility: function(target) {
-            // Hook effect
-            target.speed = target.originalSpeed * 0.9;
-            target.isHooked = true;
+            // Pull effect - slow and damage
+            target.speed = target.originalSpeed * 0.5;
+            target.health -= this.damage * 0.5;  // Additional damage
             setTimeout(() => {
-                if (target) {
-                    target.speed = target.originalSpeed;
-                    target.isHooked = false;
-                }
-            }, 500);
+                if (target) target.speed = target.originalSpeed;
+            }, 1200);
         }
     }
 };
@@ -108,8 +105,8 @@ class Turret {
         const MAX_LEVEL = 3;
         if (this.level >= MAX_LEVEL) return false;
         
-        // Smaller damage increase per upgrade
-        this.damage *= 1.05;  // 5% increase instead of 10%
+        // Increased damage boost per upgrade
+        this.damage *= 1.15;  // 15% increase instead of 5%
         this.investments.damage += 100;
         this.level++;
         return true;
@@ -119,8 +116,8 @@ class Turret {
         const MAX_LEVEL = 3;
         if (this.level >= MAX_LEVEL) return false;
         
-        // Smaller range increase
-        this.range *= 1.05;  // 5% increase
+        // Slightly better range increase
+        this.range *= 1.08;  // 8% increase
         this.investments.range += 100;
         this.level++;
         return true;
@@ -130,8 +127,8 @@ class Turret {
         const MAX_LEVEL = 3;
         if (this.level >= MAX_LEVEL) return false;
         
-        // Smaller attack speed increase
-        this.attackSpeed *= 1.05;  // 5% increase
+        // Better attack speed increase
+        this.attackSpeed *= 1.12;  // 12% increase
         this.investments.speed += 100;
         this.level++;
         return true;
