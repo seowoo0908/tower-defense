@@ -26,41 +26,41 @@
         </div>
         
         <div class="tower-selection">
-            <h3>Available Turrets</h3>
             <div class="tower-options">
-                <div class="tower-option" data-tower="LUX">
-                    <div class="tower-icon lux"></div>
-                    <div class="tower-info">
-                        <h4>Lux Turret</h4>
-                        <p>Cost: 300</p>
-                        <p>Long range mage turret</p>
-                    </div>
+                <div class="tower-option" data-tower="BASIC" title="Basic Turret - Fast attack speed (250g)">
+                    <svg class="tower-icon" viewBox="0 0 60 60">
+                        <circle class="turret-base" cx="30" cy="38" r="18" fill="#666" stroke="#444"/>
+                        <rect class="turret-gun" x="27" y="12" width="6" height="22" fill="#5a9" stroke="#478"/>
+                        <circle class="turret-head" cx="30" cy="38" r="9" fill="#777" stroke="#555"/>
+                    </svg>
+                    <div class="tower-cost">250g</div>
                 </div>
-                <div class="tower-option" data-tower="ASHE">
-                    <div class="tower-icon ashe"></div>
-                    <div class="tower-info">
-                        <h4>Ashe Turret</h4>
-                        <p>Cost: 250</p>
-                        <p>Slows enemies</p>
-                    </div>
+                <div class="tower-option" data-tower="SNIPER" title="Sniper Turret - Long range (300g)">
+                    <svg class="tower-icon" viewBox="0 0 60 60">
+                        <circle class="turret-base" cx="30" cy="38" r="18" fill="#666" stroke="#444"/>
+                        <rect class="turret-gun" x="27" y="8" width="6" height="30" fill="#c55" stroke="#a44"/>
+                        <circle class="turret-head" cx="30" cy="38" r="9" fill="#777" stroke="#555"/>
+                    </svg>
+                    <div class="tower-cost">300g</div>
                 </div>
-                <div class="tower-option" data-tower="BRAND">
-                    <div class="tower-icon brand"></div>
-                    <div class="tower-info">
-                        <h4>Brand Turret</h4>
-                        <p>Cost: 400</p>
-                        <p>Area damage + burn</p>
-                    </div>
+                <div class="tower-option" data-tower="CANNON" title="Cannon Turret - Area damage (400g)">
+                    <svg class="tower-icon" viewBox="0 0 60 60">
+                        <circle class="turret-base" cx="30" cy="38" r="18" fill="#666" stroke="#444"/>
+                        <rect class="turret-gun" x="24" y="15" width="12" height="22" fill="#f80" stroke="#d60" rx="2"/>
+                        <circle class="turret-head" cx="30" cy="38" r="9" fill="#777" stroke="#555"/>
+                    </svg>
+                    <div class="tower-cost">400g</div>
                 </div>
-                <div class="tower-option" data-tower="THRESH">
-                    <div class="tower-icon thresh"></div>
-                    <div class="tower-info">
-                        <h4>Thresh Turret</h4>
-                        <p>Cost: 350</p>
-                        <p>Hooks enemies</p>
-                    </div>
+                <div class="tower-option" data-tower="FROST" title="Frost Turret - Slows enemies (350g)">
+                    <svg class="tower-icon" viewBox="0 0 60 60">
+                        <circle class="turret-base" cx="30" cy="38" r="18" fill="#666" stroke="#444"/>
+                        <path class="turret-gun" d="M30 12 L36 22 L30 32 L24 22 Z" fill="#5dd" stroke="#4cc"/>
+                        <circle class="turret-head" cx="30" cy="38" r="9" fill="#777" stroke="#555"/>
+                    </svg>
+                    <div class="tower-cost">350g</div>
                 </div>
             </div>
+            <div id="placement-preview" class="hidden"></div>
         </div>
         
         <div id="tower-details" class="tower-details hidden">
@@ -99,6 +99,40 @@
                 </div>
             </div>
             <button id="sell-tower" class="sell-btn">Sell Turret</button>
+        </div>
+        
+        <div id="selected-turret" class="turret-menu hidden">
+            <div class="menu-header">
+                <h3>Turret Info</h3>
+                <button id="close-menu" class="close-btn">×</button>
+            </div>
+            <div class="turret-info">
+                <p id="turret-name">Type: Basic</p>
+                <p id="turret-level">Level: 1</p>
+                <p id="turret-damage">Damage: 1</p>
+                <p id="turret-range">Range: 150</p>
+                <p id="turret-speed">Attack Speed: 1.0</p>
+            </div>
+            <div class="upgrade-options">
+                <div class="upgrade-item">
+                    <button id="upgrade-damage" class="upgrade-btn">
+                        Damage +50%
+                        <span class="cost">100g</span>
+                    </button>
+                </div>
+                <div class="upgrade-item">
+                    <button id="upgrade-range" class="upgrade-btn">
+                        Range +25%
+                        <span class="cost">75g</span>
+                    </button>
+                </div>
+                <div class="upgrade-item">
+                    <button id="upgrade-speed" class="upgrade-btn">
+                        Speed +25%
+                        <span class="cost">125g</span>
+                    </button>
+                </div>
+            </div>
         </div>
         
         <div id="placement-details" class="hidden">

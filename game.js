@@ -9,7 +9,7 @@ canvas.height = 600;
 // Game state
 const gameState = {
     score: 0,
-    money: 500,
+    money: 1500,
     lives: 20,
     enemies: [],
     turrets: [],
@@ -32,7 +32,8 @@ const gameState = {
     waveInProgress: false,
     lastSpawnTime: 0,
     gameOver: false,
-    enemiesSpawned: 0
+    enemiesSpawned: 0,
+    particles: []
 };
 
 // Track mouse position
@@ -40,36 +41,27 @@ canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     gameState.mouseX = e.clientX - rect.left;
     gameState.mouseY = e.clientY - rect.top;
-});
 
-// Add turret selection event listeners
-document.querySelectorAll('.turret-option').forEach(option => {
-    option.addEventListener('click', () => {
-        const turretType = option.getAttribute('data-tower');
-        gameState.selectedTurretType = turretType;
+    // Update placement preview if placing turret
+    if (gameState.selectedTurretType) {
+        const preview = document.getElementById('placement-preview');
+        if (preview.classList.contains('hidden')) {
+            preview.classList.remove('hidden');
+            // Create preview if it doesn't exist
+            if (!preview.querySelector('.tower-icon')) {
+                const selectedTurret = document.querySelector(`.tower-option[data-tower="${gameState.selectedTurretType}"]`);
+                preview.innerHTML = selectedTurret.querySelector('.tower-icon').outerHTML;
+            }
+        }
         
-        // Update visual feedback
-        document.querySelectorAll('.turret-option').forEach(opt => 
-            opt.style.border = '1px solid #C8AA6E');
-        option.style.border = '2px solid #00ff00';
-        
-        // Change cursor style
-        canvas.classList.add('placing-turret');
+        // Position preview at mouse cursor
+        preview.style.left = (e.clientX - 20) + 'px';
+        preview.style.top = (e.clientY - 20) + 'px';
 
-        // Show placement details
-        const turretData = TURRET_TYPES[turretType];
-        document.getElementById('placement-details').classList.remove('hidden');
-        document.getElementById('preview-name').textContent = turretData.name;
-        document.getElementById('preview-damage').textContent = `Damage: ${turretData.damage}`;
-        document.getElementById('preview-range').textContent = `Range: ${turretData.range}`;
-        document.getElementById('preview-speed').textContent = `Attack Speed: ${turretData.attackSpeed}`;
-        document.getElementById('preview-special').textContent = `Special: ${turretData.special}`;
-        document.getElementById('preview-description').textContent = turretData.description;
-
-        // Update preview circle color
-        const previewCircle = document.querySelector('.turret-preview');
-        previewCircle.style.backgroundColor = turretData.color;
-    });
+        // Check if placement is valid
+        const isValidPlacement = checkValidPlacement(gameState.mouseX, gameState.mouseY);
+        preview.className = isValidPlacement ? 'placement-valid' : 'placement-invalid';
+    }
 });
 
 // Right click to cancel turret placement
@@ -78,10 +70,31 @@ canvas.addEventListener('contextmenu', (e) => {
     if (gameState.selectedTurretType) {
         gameState.selectedTurretType = null;
         canvas.classList.remove('placing-turret');
-        document.querySelectorAll('.turret-option').forEach(opt => 
-            opt.style.border = '1px solid #C8AA6E');
-        document.getElementById('placement-details').classList.add('hidden');
+        document.querySelectorAll('.tower-option').forEach(opt => 
+            opt.classList.remove('selected'));
+        document.getElementById('placement-preview').classList.add('hidden');
     }
+});
+
+// Add turret selection event listeners
+document.querySelectorAll('.tower-option').forEach(option => {
+    option.addEventListener('click', () => {
+        const turretType = option.getAttribute('data-tower');
+        gameState.selectedTurretType = turretType;
+        
+        // Update visual feedback
+        document.querySelectorAll('.tower-option').forEach(opt => 
+            opt.classList.remove('selected'));
+        option.classList.add('selected');
+        
+        // Change cursor style
+        canvas.classList.add('placing-turret');
+
+        // Show placement preview
+        const preview = document.getElementById('placement-preview');
+        preview.innerHTML = option.querySelector('.tower-icon').outerHTML;
+        preview.classList.remove('hidden');
+    });
 });
 
 // Turret placement
@@ -97,68 +110,251 @@ canvas.addEventListener('click', (e) => {
     });
 
     if (clickedTurret) {
-        // Select turret for upgrade
-        gameState.selectedTurret = clickedTurret;
-        updateTurretUI(clickedTurret);
-        document.getElementById('selected-turret').classList.remove('hidden');
-        document.getElementById('placement-details').classList.add('hidden');
-        
-        // Reset turret placement mode
-        gameState.selectedTurretType = null;
-        canvas.classList.remove('placing-turret');
-        document.querySelectorAll('.turret-option').forEach(opt => 
-            opt.style.border = '1px solid #C8AA6E');
-    } else if (gameState.selectedTurretType) {
-        const turretCost = TURRET_TYPES[gameState.selectedTurretType].cost;
+        if (gameState.selectedTurret === clickedTurret) {
+            if (clickedTurret.level >= 6) {
+                showMessage("MAXIMUM POWER REACHED!", canvas.width/2, canvas.height/2);
+                return;
+            }
+            // Moderate upgrade cost (75g)
+            if (gameState.money >= 75) {
+                clickedTurret.damage *= 2.5;  // Same strong upgrades
+                clickedTurret.range *= 1.3;   
+                clickedTurret.fireRate *= 0.8;
+                gameState.money -= 75;  // 75 gold now
+                clickedTurret.level++;
+                
+                showUpgradeEffect(clickedTurret.x, clickedTurret.y);
+                showMessage(`Damage: ${Math.round(clickedTurret.damage)}!`, canvas.width/2, canvas.height/2);
+            } else {
+                showMessage("Need 75 gold!", canvas.width/2, canvas.height/2);
+            }
+        } else {
+            gameState.selectedTurret = clickedTurret;
+            showMessage(`Level ${clickedTurret.level} - Click to upgrade (75g)`, canvas.width/2, canvas.height - 50);
+        }
+    } else if (gameState.selectedTurretType && checkValidPlacement(x, y)) {
+        const turretCost = getTurretCost(gameState.selectedTurretType);
         
         if (gameState.money >= turretCost) {
-            const newTurret = new Turret(gameState.selectedTurretType, x, y);
+            const newTurret = createTurret(gameState.selectedTurretType, x, y);
             gameState.turrets.push(newTurret);
             gameState.money -= turretCost;
             
-            // Keep placement mode active
-            // Don't reset selectedTurretType to allow placing multiple turrets
+            // Reset placement preview but keep placement mode active
+            document.getElementById('placement-preview').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('placement-preview').classList.remove('hidden');
+            }, 50);
         } else {
-            // Show "not enough money" message
-            const message = document.createElement('div');
-            message.textContent = 'Not enough money!';
-            message.className = 'message';
-            document.body.appendChild(message);
-            setTimeout(() => message.remove(), 2000);
+            showMessage('Not enough money!', canvas.width/2, canvas.height/2);
             
             // Reset turret placement mode
             gameState.selectedTurretType = null;
             canvas.classList.remove('placing-turret');
-            document.getElementById('placement-details').classList.add('hidden');
-            document.querySelectorAll('.turret-option').forEach(opt => 
-                opt.style.border = '1px solid #C8AA6E');
+            document.getElementById('placement-preview').classList.add('hidden');
+            document.querySelectorAll('.tower-option').forEach(opt => 
+                opt.classList.remove('selected'));
         }
+    } else {
+        // Clicked empty space, deselect turret
+        gameState.selectedTurret = null;
     }
 });
+
+// Show upgrade effect
+function showUpgradeEffect(x, y) {
+    const texts = ['POWER UP!', 'SUPER!', 'STRONGER!'];
+    const colors = ['#ff0', '#f80', '#f00'];
+    
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+            const text = texts[i];
+            const color = colors[i];
+            
+            // Create floating text
+            ctx.save();
+            ctx.font = 'bold 22px Arial';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.fillText(text, x, y - 35 - i * 20);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeText(text, x, y - 35 - i * 20);
+            ctx.restore();
+            
+            // Create more particles
+            for (let j = 0; j < 10; j++) {
+                const angle = (j / 10) * Math.PI * 2;
+                const speed = 2.5;
+                const particle = {
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 25
+                };
+                gameState.particles = gameState.particles || [];
+                gameState.particles.push(particle);
+            }
+        }, i * 200);
+    }
+}
+
+// Update particles in game loop
+function updateParticles() {
+    if (!gameState.particles) return;
+    
+    for (let i = gameState.particles.length - 1; i >= 0; i--) {
+        const particle = gameState.particles[i];
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.life--;
+        
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 200, 0, ${particle.life / 30})`;
+        ctx.fill();
+        
+        // Remove dead particles
+        if (particle.life <= 0) {
+            gameState.particles.splice(i, 1);
+        }
+    }
+}
+
+// Helper functions for turret placement
+function getTurretCost(type) {
+    switch(type) {
+        case 'SNIPER':
+            return 250;  // Was 200
+        case 'CANNON':
+            return 300;  // Was 250
+        case 'FROST':
+            return 250;  // Was 200
+        default:
+            return 200;  // Was 150
+    }
+}
+
+function createTurret(type, x, y) {
+    return {
+        type: type,
+        x: x,
+        y: y,
+        level: 1,
+        damage: type === 'SNIPER' ? 25 :  // Higher base damage
+               type === 'CANNON' ? 18 :   
+               type === 'FROST' ? 10 :    
+               15,                        
+        range: type === 'SNIPER' ? 250 : 180,  
+        fireRate: type === 'BASIC' ? 400 : 1000,
+        lastShot: 0,
+        target: null
+    };
+}
+
+function checkValidPlacement(x, y) {
+    // Check if too close to path
+    for (let i = 0; i < gameState.path.length - 1; i++) {
+        const start = gameState.path[i];
+        const end = gameState.path[i + 1];
+        const distance = distanceToLine(x, y, start.x, start.y, end.x, end.y);
+        if (distance < 40) return false;
+    }
+
+    // Check if too close to other turrets
+    for (const turret of gameState.turrets) {
+        const distance = Math.hypot(turret.x - x, turret.y - y);
+        if (distance < 40) return false;
+    }
+
+    return true;
+}
+
+function distanceToLine(x, y, x1, y1, x2, y2) {
+    const A = x - x1;
+    const B = y - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const len_sq = C * C + D * D;
+    let param = -1;
+    
+    if (len_sq != 0) param = dot / len_sq;
+
+    let xx, yy;
+
+    if (param < 0) {
+        xx = x1;
+        yy = y1;
+    } else if (param > 1) {
+        xx = x2;
+        yy = y2;
+    } else {
+        xx = x1 + param * C;
+        yy = y1 + param * D;
+    }
+
+    const dx = x - xx;
+    const dy = y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+}
 
 // Generate an infinite wave
 function generateWave(waveNumber) {
     // Base stats that increase with wave number
-    const baseCount = Math.min(8 + waveNumber * 2, 150);  // Max 150 enemies
-    const baseInterval = Math.max(1500 - waveNumber * 20, 100);  // Min 100ms interval
+    const baseCount = Math.min(5 + waveNumber * 2, 100);  // Reduced max enemies to 100
+    const baseInterval = Math.max(2000 - waveNumber * 50, 500);  // Slower spawning, min 500ms
     
-    // Available enemy types based on wave number
+    // Special wave types
+    const isSpecialWave = waveNumber % 5 === 0;  // Every 5th wave is special
+    
+    if (isSpecialWave) {
+        // Special wave types
+        switch(waveNumber % 15) {
+            case 0:  // Boss Rush (every 15th wave)
+                return {
+                    count: 3 + Math.floor(waveNumber / 15),
+                    type: 'boss_rush',
+                    types: ['boss'],
+                    interval: 5000,
+                    bosses: [{ type: 'boss', at: 0 }]
+                };
+            case 5:  // Speed Rush (every 5th wave not divisible by 15)
+                return {
+                    count: Math.min(20 + waveNumber, 50),
+                    type: 'speed_rush',
+                    types: ['fast', 'ninja'],
+                    interval: 300,
+                };
+            case 10:  // Tank Parade (every 10th wave not divisible by 15)
+                return {
+                    count: Math.min(5 + Math.floor(waveNumber/10), 15),
+                    type: 'tank_parade',
+                    types: ['tank'],
+                    interval: 3000,
+                    bosses: [{ type: 'tank', at: Math.floor(baseCount * 0.5) }]
+                };
+        }
+    }
+    
+    // Regular waves with progressive difficulty
     let types = ['regular'];
     if (waveNumber >= 2) types.push('fast');
     if (waveNumber >= 3) types.push('tank');
     if (waveNumber >= 4) types.push('ninja');
-    if (waveNumber >= 5) types.push('ghost');
+    if (waveNumber >= 6) types.push('ghost');
 
-    // Calculate number of bosses based on wave
-    const numBosses = Math.min(Math.floor(waveNumber / 5), 5);  // Max 5 bosses
+    // Calculate number of mini-bosses based on wave
+    const numBosses = Math.min(Math.floor(waveNumber / 8), 3);  // Max 3 bosses in regular waves
     let bosses = [];
     if (numBosses > 0) {
-        const bossTypes = ['tank', 'ninja', 'ghost', 'boss'];
-        const positions = [];
+        const bossTypes = ['tank', 'ninja', 'ghost'];
         for (let i = 0; i < numBosses; i++) {
-            const bossType = bossTypes[Math.min(Math.floor(waveNumber / 8), bossTypes.length - 1)];
-            const position = Math.floor(baseCount * (0.5 + i * 0.1));  // Space out bosses
-            positions.push(position);
+            const bossType = bossTypes[Math.min(Math.floor(waveNumber / 10), bossTypes.length - 1)];
+            const position = Math.floor(baseCount * (0.6 + i * 0.15));  // Space out bosses
             bosses.push({ type: bossType, at: position });
         }
     }
@@ -178,9 +374,10 @@ function startWave() {
     const wave = generateWave(gameState.currentWave + 1);
     gameState.enemiesSpawned = 0;
     gameState.waveInProgress = true;
+    gameState.currentWave++;  // Increment the wave number!
 
     // Show wave start message
-    showMessage(`Wave ${gameState.currentWave + 1} Starting!`, canvas.width/2, canvas.height/2);
+    showMessage(`Wave ${gameState.currentWave} Starting!`, canvas.width/2, canvas.height/2);
 
     const spawnEnemy = () => {
         if (gameState.enemiesSpawned >= wave.count || !gameState.waveInProgress) {
@@ -514,9 +711,14 @@ function drawProjectiles() {
         const projectile = gameState.projectiles[i];
         
         // Calculate current position
-        const progress = (Date.now() - projectile.startTime) / 200; // 200ms travel time
+        const progress = (Date.now() - projectile.startTime) / 50; // 50ms travel time (SUPER SUPER FAST!)
         if (progress >= 1) {
-            projectile.reached = true;
+            if (!projectile.damageDealt && projectile.target && projectile.target.health > 0) {
+                projectile.target.health -= projectile.damage;  // Use normal numbers for damage
+                projectile.damageDealt = true;
+            }
+            gameState.projectiles.splice(i, 1);
+            i--;
             continue;
         }
 
@@ -531,28 +733,301 @@ function drawProjectiles() {
     }
 }
 
+// Turret attack function
+function turretAttack(turret, enemies) {
+    if (!enemies.length) return null;
+    
+    // Check if turret can fire
+    const now = Date.now();
+    if (now - turret.lastShot < turret.fireRate) return null;
+
+    // Find target in range
+    let target = null;
+    let minDistance = Infinity;
+    
+    for (const enemy of enemies) {
+        const distance = Math.hypot(enemy.x - turret.x, enemy.y - turret.y);
+        if (distance < turret.range && distance < minDistance) {
+            target = enemy;
+            minDistance = distance;
+        }
+    }
+
+    if (!target) return null;
+
+    // Create projectile
+    turret.lastShot = now;
+    // Damage is now dealt when projectile hits
+    return {
+        x: turret.x,
+        y: turret.y,
+        targetX: target.x,
+        targetY: target.y,
+        startTime: now,
+        color: turret.type === 'FROST' ? '#5dd' : '#fff',
+        reached: false,
+        damageDealt: false,
+        damage: turret.damage,
+        target: target
+    };
+}
+
+// Update game state
+function updateGame() {
+    // Update enemies
+    for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+        const enemy = gameState.enemies[i];
+        const reachedEnd = enemy.update();
+
+        if (reachedEnd) {
+            gameState.lives--;
+            gameState.enemies.splice(i, 1);
+            
+            if (gameState.lives <= 0) {
+                alert('Game Over!');
+                initGame();
+                return;
+            }
+        } else if (enemy.health <= 0) {  // Check against normal number zero
+            gameState.money += enemy.reward;
+            gameState.score += enemy.reward;
+            gameState.enemies.splice(i, 1);
+        }
+    }
+
+    // Check if wave is complete
+    if (gameState.enemies.length === 0 && gameState.enemiesSpawned >= generateWave(gameState.currentWave + 1).count) {
+        gameState.waveInProgress = false;
+        gameState.currentWave++;
+        startWave(); // Start next wave immediately
+    }
+
+    // Update wave progress
+    if (gameState.waveInProgress) {
+        const wave = generateWave(gameState.currentWave + 1);
+        const totalEnemies = wave.count;
+        const remainingEnemies = wave.count - gameState.enemiesSpawned + gameState.enemies.length;
+        const progress = ((totalEnemies - remainingEnemies) / totalEnemies) * 100;
+        document.getElementById('wave-bar').style.width = `${progress}%`;
+    }
+
+    // Update turrets
+    for (const turret of gameState.turrets) {
+        const projectile = turretAttack(turret, gameState.enemies);
+        if (projectile) {
+            gameState.projectiles.push(projectile);
+        }
+    }
+
+    // Update projectiles
+    for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+        const projectile = gameState.projectiles[i];
+        if (projectile.reached) {
+            gameState.projectiles.splice(i, 1);
+        }
+    }
+}
+
+// Draw turret function
+function drawTurret(ctx, turret) {
+    // Draw base
+    ctx.beginPath();
+    ctx.arc(turret.x, turret.y, 20, 0, Math.PI * 2);
+    ctx.fillStyle = '#666';
+    ctx.fill();
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw gun based on type
+    ctx.beginPath();
+    switch(turret.type) {
+        case 'BASIC':
+            ctx.rect(turret.x - 3, turret.y - 25, 6, 22);
+            ctx.fillStyle = '#5a9';
+            break;
+        case 'SNIPER':
+            ctx.rect(turret.x - 3, turret.y - 30, 6, 30);
+            ctx.fillStyle = '#c55';
+            break;
+        case 'CANNON':
+            ctx.rect(turret.x - 6, turret.y - 22, 12, 22);
+            ctx.fillStyle = '#f80';
+            break;
+        case 'FROST':
+            ctx.moveTo(turret.x, turret.y - 25);
+            ctx.lineTo(turret.x + 6, turret.y - 15);
+            ctx.lineTo(turret.x, turret.y - 5);
+            ctx.lineTo(turret.x - 6, turret.y - 15);
+            ctx.closePath();
+            ctx.fillStyle = '#5dd';
+            break;
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw head
+    ctx.beginPath();
+    ctx.arc(turret.x, turret.y, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#777';
+    ctx.fill();
+    ctx.strokeStyle = '#555';
+    ctx.stroke();
+}
+
+// Draw turret upgrade bar
+function drawTurretUpgradeBar(turret) {
+    if (turret !== gameState.selectedTurret) return;
+
+    const barWidth = 60;
+    const barHeight = 8;
+    const x = turret.x - barWidth/2;
+    const y = turret.y + 25;
+    
+    // Draw background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x - 1, y - 1, barWidth + 2, barHeight + 2);
+    
+    // Draw level indicator
+    const levelProgress = Math.min((turret.level - 1) / 5, 1); // Max at level 6
+    
+    // Gradient for upgrade bar
+    const gradient = ctx.createLinearGradient(x, y, x + barWidth, y);
+    gradient.addColorStop(0, '#ff0');
+    gradient.addColorStop(0.5, '#f80');
+    gradient.addColorStop(1, '#f00');
+    
+    // Draw progress bar
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, barWidth * levelProgress, barHeight);
+    
+    // Draw level text
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.strokeText(`LVL ${turret.level}`, turret.x, y - 5);
+    ctx.fillText(`LVL ${turret.level}`, turret.x, y - 5);
+    
+    // Draw damage text
+    ctx.font = 'bold 10px Arial';
+    ctx.fillStyle = '#ff0';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeText(`DMG: ${Math.round(turret.damage)}`, turret.x, y + 20);
+    ctx.fillText(`DMG: ${Math.round(turret.damage)}`, turret.x, y + 20);
+    
+    if (turret.level >= 6) {
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#f00';
+        ctx.strokeText('MAXED!', turret.x, y - 25);
+        ctx.fillText('MAXED!', turret.x, y - 25);
+        
+        // Add subtle glow for max level
+        ctx.beginPath();
+        ctx.arc(turret.x, turret.y, 20, 0, Math.PI * 2);
+        const glowGradient = ctx.createRadialGradient(
+            turret.x, turret.y, 0,
+            turret.x, turret.y, 20
+        );
+        glowGradient.addColorStop(0, 'rgba(255, 0, 0, 0.1)');
+        glowGradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+    }
+}
+
 // Update turret UI
 function updateTurretUI(turret) {
-    document.getElementById('turret-name').textContent = `Type: ${turret.name}`;
-    document.getElementById('turret-level').textContent = `Level: ${turret.level}`;
-    document.getElementById('turret-damage').textContent = `Damage: ${turret.damage}`;
-    document.getElementById('turret-range').textContent = `Range: ${turret.range}`;
-    document.getElementById('turret-speed').textContent = `Attack Speed: ${turret.attackSpeed.toFixed(1)}`;
-
-    // Reset upgrade visibility
-    document.querySelectorAll('.upgrade-item').forEach(item => {
-        item.style.display = 'flex';
-    });
-
-    // Update upgrade buttons
-    const damageBtn = document.getElementById('upgrade-damage');
-    const rangeBtn = document.getElementById('upgrade-range');
-    const speedBtn = document.getElementById('upgrade-speed');
+    const menu = document.getElementById('selected-turret');
+    menu.classList.remove('hidden');
     
-    damageBtn.disabled = gameState.money < 100;
-    rangeBtn.disabled = gameState.money < 75;
-    speedBtn.disabled = gameState.money < 125;
+    document.getElementById('turret-name').textContent = `Type: ${turret.type}`;
+    document.getElementById('turret-level').textContent = `Level: ${turret.level}`;
+    document.getElementById('turret-damage').textContent = `Damage: ${Math.round(turret.damage)}`;
+    document.getElementById('turret-range').textContent = `Range: ${Math.round(turret.range)}`;
+    document.getElementById('turret-speed').textContent = `Attack Speed: ${(1000/turret.fireRate).toFixed(1)}`;
+
+    // Update upgrade buttons with new costs
+    document.getElementById('upgrade-damage').textContent = `Upgrade Damage (75g)`;
+    document.getElementById('upgrade-range').textContent = `Upgrade Range (60g)`;
+    document.getElementById('upgrade-speed').textContent = `Upgrade Speed (90g)`;
+    
+    document.getElementById('upgrade-damage').disabled = gameState.money < 75;
+    document.getElementById('upgrade-range').disabled = gameState.money < 60;
+    document.getElementById('upgrade-speed').disabled = gameState.money < 90;
 }
+
+// Close menu button handler
+document.getElementById('close-menu').addEventListener('click', () => {
+    document.getElementById('selected-turret').classList.add('hidden');
+    gameState.selectedTurret = null;
+});
+
+// Add upgrade event listeners with new costs
+document.getElementById('upgrade-damage').addEventListener('click', () => {
+    if (gameState.selectedTurret && gameState.money >= 75) {
+        gameState.selectedTurret.damage *= 2.5;
+        gameState.money -= 75;
+        gameState.selectedTurret.level++;
+        updateTurretUI(gameState.selectedTurret);
+    }
+});
+
+document.getElementById('upgrade-range').addEventListener('click', () => {
+    if (gameState.selectedTurret && gameState.money >= 60) {
+        gameState.selectedTurret.range *= 1.3;
+        gameState.money -= 60;
+        gameState.selectedTurret.level++;
+        updateTurretUI(gameState.selectedTurret);
+    }
+});
+
+document.getElementById('upgrade-speed').addEventListener('click', () => {
+    if (gameState.selectedTurret && gameState.money >= 90) {
+        gameState.selectedTurret.fireRate *= 0.8;  // Lower is faster
+        gameState.money -= 90;
+        gameState.selectedTurret.level++;
+        updateTurretUI(gameState.selectedTurret);
+    }
+});
+
+// Add sell turret handler
+document.getElementById('sell-tower').addEventListener('click', () => {
+    if (gameState.selectedTurret) {
+        // Get refund based on turret type and upgrades
+        const baseCost = getTurretCost(gameState.selectedTurret.type);
+        const refund = Math.floor(baseCost * 0.7);  // 70% refund
+        gameState.money += refund;
+        
+        // Remove turret
+        const index = gameState.turrets.indexOf(gameState.selectedTurret);
+        if (index > -1) {
+            gameState.turrets.splice(index, 1);
+        }
+        
+        // Close menu
+        document.getElementById('selected-turret').classList.add('hidden');
+        gameState.selectedTurret = null;
+    }
+});
+
+// Add right-click to close menu
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (gameState.selectedTurret) {
+        document.getElementById('selected-turret').classList.add('hidden');
+        gameState.selectedTurret = null;
+    }
+    if (gameState.selectedTurretType) {
+        gameState.selectedTurretType = null;
+        canvas.classList.remove('placing-turret');
+        document.getElementById('placement-preview').classList.add('hidden');
+        document.querySelectorAll('.tower-option').forEach(opt => 
+            opt.classList.remove('selected'));
+    }
+});
 
 // Update UI elements
 function updateUI() {
@@ -584,7 +1059,7 @@ const startWaveBtn = addStartWaveButton();
 // Game initialization
 function initGame() {
     // Reset game state
-    gameState.money = 500;
+    gameState.money = 1500;
     gameState.score = 0;
     gameState.lives = 20;
     gameState.currentWave = 0;
@@ -625,9 +1100,33 @@ function gameLoop() {
     // Update game state
     updateGame();
     
-    // Draw turrets
+    // Draw turrets and their upgrade bars
     for (const turret of gameState.turrets) {
-        turret.draw(ctx);
+        drawTurret(ctx, turret);
+        drawTurretUpgradeBar(turret);
+        
+        // Draw selection circle for selected turret
+        if (turret === gameState.selectedTurret) {
+            ctx.beginPath();
+            ctx.arc(turret.x, turret.y, 25, 0, Math.PI * 2);
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw range circle with gradient
+            ctx.beginPath();
+            ctx.arc(turret.x, turret.y, turret.range, 0, Math.PI * 2);
+            const rangeGradient = ctx.createRadialGradient(
+                turret.x, turret.y, 0,
+                turret.x, turret.y, turret.range
+            );
+            rangeGradient.addColorStop(0, 'rgba(0, 255, 0, 0.1)');
+            rangeGradient.addColorStop(1, 'rgba(0, 255, 0, 0)');
+            ctx.fillStyle = rangeGradient;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.stroke();
+        }
     }
     
     // Draw enemies
@@ -637,12 +1136,18 @@ function gameLoop() {
     
     // Draw projectiles
     drawProjectiles();
+    
+    // Update and draw particles
+    updateParticles();
 
     // Draw turret preview if type is selected
     if (gameState.selectedTurretType) {
-        const previewTurret = new Turret(gameState.selectedTurretType, gameState.mouseX, gameState.mouseY);
         ctx.globalAlpha = 0.5;
-        previewTurret.draw(ctx);
+        drawTurret(ctx, {
+            type: gameState.selectedTurretType,
+            x: gameState.mouseX,
+            y: gameState.mouseY
+        });
         ctx.globalAlpha = 1.0;
     }
 
@@ -655,133 +1160,6 @@ function gameLoop() {
 
 // Start the game when the page loads
 window.addEventListener('load', initGame);
-
-// Update game state
-function updateGame() {
-    // Update enemies
-    for (let i = gameState.enemies.length - 1; i >= 0; i--) {
-        const enemy = gameState.enemies[i];
-        const reachedEnd = enemy.update();
-
-        if (reachedEnd) {
-            gameState.lives--;
-            gameState.enemies.splice(i, 1);
-            
-            if (gameState.lives <= 0) {
-                alert('Game Over!');
-                initGame();
-                return;
-            }
-        } else if (enemy.health <= 0) {
-            gameState.money += enemy.reward;
-            gameState.score += enemy.reward;
-            gameState.enemies.splice(i, 1);
-        }
-    }
-
-    // Check if all enemies are killed and wave is complete
-    if (gameState.enemies.length === 0 && gameState.enemiesSpawned >= generateWave(gameState.currentWave + 1).count) {
-        gameState.waveInProgress = false;
-        gameState.currentWave++;
-        startWave(); // Start next wave immediately
-    }
-
-    // Update wave progress
-    if (gameState.waveInProgress) {
-        const wave = generateWave(gameState.currentWave + 1);
-        const totalEnemies = wave.count;
-        const remainingEnemies = wave.count - gameState.enemiesSpawned + gameState.enemies.length;
-        const progress = ((totalEnemies - remainingEnemies) / totalEnemies) * 100;
-        document.getElementById('wave-bar').style.width = `${progress}%`;
-    }
-
-    // Update turrets
-    for (const turret of gameState.turrets) {
-        const projectile = turret.attack(gameState.enemies);
-        if (projectile) {
-            gameState.projectiles.push(projectile);
-        }
-    }
-
-    // Update projectiles
-    for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
-        const projectile = gameState.projectiles[i];
-        if (projectile.reached) {
-            gameState.projectiles.splice(i, 1);
-        }
-    }
-}
-
-// Add upgrade event listeners
-document.getElementById('upgrade-damage').addEventListener('click', () => {
-    if (gameState.selectedTurret && gameState.money >= 100) {
-        gameState.selectedTurret.damage *= 1.5;
-        gameState.money -= 100;
-        updateTurretUI(gameState.selectedTurret);
-    }
-});
-
-document.getElementById('upgrade-range').addEventListener('click', () => {
-    if (gameState.selectedTurret && gameState.money >= 75) {
-        gameState.selectedTurret.range *= 1.2;
-        gameState.money -= 75;
-        updateTurretUI(gameState.selectedTurret);
-    }
-});
-
-document.getElementById('upgrade-speed').addEventListener('click', () => {
-    if (gameState.selectedTurret && gameState.money >= 125) {
-        gameState.selectedTurret.attackSpeed *= 1.3;
-        gameState.money -= 125;
-        updateTurretUI(gameState.selectedTurret);
-    }
-});
-
-document.getElementById('sell-turret').addEventListener('click', () => {
-    if (gameState.selectedTurret) {
-        const index = gameState.turrets.indexOf(gameState.selectedTurret);
-        if (index > -1) {
-            // Return 70% of total investment
-            const refund = Math.floor(gameState.selectedTurret.getTotalInvestment() * 0.7);
-            gameState.money += refund;
-            gameState.turrets.splice(index, 1);
-            document.getElementById('turret-details').classList.add('hidden');
-            gameState.selectedTurret = null;
-        }
-    }
-});
-
-// Close turret details panel
-document.getElementById('close-details').addEventListener('click', () => {
-    document.getElementById('turret-details').classList.add('hidden');
-    gameState.selectedTurret = null;
-});
-
-// Close turret details when clicking outside
-document.addEventListener('click', (e) => {
-    const turretDetails = document.getElementById('turret-details');
-    const clickedTurret = gameState.turrets.some(turret => {
-        const distance = Math.hypot(turret.x - (e.clientX - canvas.getBoundingClientRect().left), 
-                                 turret.y - (e.clientY - canvas.getBoundingClientRect().top));
-        return distance < 20;
-    });
-
-    if (!turretDetails.contains(e.target) && 
-        !clickedTurret && 
-        e.target !== canvas && 
-        !e.target.closest('.turret-option')) {
-        turretDetails.classList.add('hidden');
-        gameState.selectedTurret = null;
-    }
-});
-
-// Add cancel upgrade handlers
-document.querySelectorAll('.cancel-upgrade').forEach(button => {
-    button.addEventListener('click', (e) => {
-        const upgradeItem = e.target.closest('.upgrade-item');
-        upgradeItem.style.display = 'none';
-    });
-});
 
 // Victory screen
 function showVictoryScreen() {

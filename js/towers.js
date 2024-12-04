@@ -3,78 +3,66 @@ const TURRET_TYPES = {
     LUX: {
         name: 'Lux Turret',
         cost: 300,
-        damage: 150,
-        range: 200,
-        attackSpeed: 1,
+        damage: 20,  // Reduced from 50
+        range: 150,
+        attackSpeed: 0.8,  // Slightly slower
         color: '#E8D661',
         special: 'Light Binding',
         description: 'Long range mage turret that deals magic damage',
         specialAbility: function(target) {
             // Root effect
-            target.speed = 0;
+            target.speed = target.originalSpeed * 0.7;  // Less slow
             setTimeout(() => {
                 if (target) target.speed = target.originalSpeed;
-            }, 2000);
+            }, 800);  // Shorter duration
         }
     },
     ASHE: {
         name: 'Ashe Turret',
         cost: 250,
-        damage: 100,
-        range: 250,
-        attackSpeed: 1.5,
+        damage: 15,  // Reduced from 35
+        range: 200,
+        attackSpeed: 1.2,  // Slightly slower
         color: '#A1DBF1',
         special: 'Frost Shot',
         description: 'Slows enemies with each attack',
         specialAbility: function(target) {
             // Slow effect
-            target.speed = target.originalSpeed * 0.7;
+            target.speed = target.originalSpeed * 0.7;  // Less slow
             setTimeout(() => {
                 if (target) target.speed = target.originalSpeed;
-            }, 1500);
+            }, 800);  // Shorter duration
         }
     },
-    BRAND: {
-        name: 'Brand Turret',
-        cost: 400,
-        damage: 200,
+    FIRE: {
+        name: 'Fire Turret',
+        cost: 300,
+        damage: 25,  // Reduced from 60
         range: 150,
-        attackSpeed: 0.8,
+        attackSpeed: 0.8,  // Slightly slower
         color: '#FF4C4C',
-        special: 'Blaze',
-        description: 'Area damage turret with burn effect',
-        specialAbility: function(target) {
-            // Burn effect
-            const burnDamage = this.damage * 0.2;
-            const burnInterval = setInterval(() => {
-                if (target && target.health > 0) {
-                    target.health -= burnDamage;
-                } else {
-                    clearInterval(burnInterval);
-                }
-            }, 500);
-            setTimeout(() => clearInterval(burnInterval), 3000);
-        }
+        special: 'Fire Shot',
+        description: 'Simple fire damage turret'
     },
     THRESH: {
         name: 'Thresh Turret',
         cost: 350,
-        damage: 80,
-        range: 175,
-        attackSpeed: 0.9,
+        damage: 18,  // Reduced from 40
+        range: 125,
+        attackSpeed: 0.5,
         color: '#50C878',
         special: 'Death Sentence',
         description: 'Hooks and holds enemies in place',
         specialAbility: function(target) {
             // Hook effect
-            target.speed = 0;
+            target.speed = target.originalSpeed * 0.9;
             target.isHooked = true;
             setTimeout(() => {
                 if (target) {
                     target.speed = target.originalSpeed;
                     target.isHooked = false;
                 }
-            }, 2500);
+            }, 500);
         }
     }
 };
@@ -117,21 +105,36 @@ class Turret {
     }
 
     upgradeDamage() {
-        this.damage *= 1.5;
+        const MAX_LEVEL = 3;
+        if (this.level >= MAX_LEVEL) return false;
+        
+        // Smaller damage increase per upgrade
+        this.damage *= 1.05;  // 5% increase instead of 10%
         this.investments.damage += 100;
         this.level++;
+        return true;
     }
 
     upgradeRange() {
-        this.range *= 1.2;
-        this.investments.range += 75;
+        const MAX_LEVEL = 3;
+        if (this.level >= MAX_LEVEL) return false;
+        
+        // Smaller range increase
+        this.range *= 1.05;  // 5% increase
+        this.investments.range += 100;
         this.level++;
+        return true;
     }
 
     upgradeSpeed() {
-        this.attackSpeed *= 1.3;
-        this.investments.speed += 125;
+        const MAX_LEVEL = 3;
+        if (this.level >= MAX_LEVEL) return false;
+        
+        // Smaller attack speed increase
+        this.attackSpeed *= 1.05;  // 5% increase
+        this.investments.speed += 100;
         this.level++;
+        return true;
     }
 
     canAttack() {
@@ -190,7 +193,7 @@ class Turret {
                 // Attack
                 this.lastAttack = now;
                 this.target.health -= this.damage;
-                this.specialAbility(this.target);
+                if (this.specialAbility) this.specialAbility(this.target);
 
                 // Return projectile data
                 return {

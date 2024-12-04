@@ -6,11 +6,12 @@ class Enemy {
         this.y = path[0].y;
         this.path = [...path];
         this.pathIndex = 0;
-        this.speed = enemyData.speed * (1 + wave * 0.1); // Enemies get faster each wave
-        this.health = enemyData.health * (1 + wave * 0.2); // Enemies get more health each wave
+        this.speed = enemyData.speed * (1 + wave * 0.5); // 5x more speed scaling per wave!!!
+        // Convert health to number and handle wave scaling
+        this.health = Number(enemyData.health) * (1 + wave * 1.0); // Convert BigInt to Number first!
         this.maxHealth = this.health;
-        this.reward = Math.floor(enemyData.reward * (1 + wave * 0.1)); // Rewards increase with waves
-        this.damage = enemyData.damage;
+        this.reward = Math.floor(enemyData.reward * (1 + wave * 0.3)); // 3x more reward scaling!!!
+        this.damage = enemyData.damage * (1 + wave * 0.5); // NEW: Damage now scales with waves!!!
         this.color = enemyData.color;
         this.size = enemyData.size || 15;
         this.isBoss = enemyData.isBoss || false;
@@ -142,56 +143,67 @@ class Enemy {
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(this.x - healthBarWidth/2, this.y - this.size - 10, healthBarWidth * healthPercentage, healthBarHeight);
     }
+
+    takeDamage(amount) {
+        // Subtract damage from health
+        this.health -= amount;
+        if (this.health < 0) this.health = 0;
+    }
+
+    getHealthPercent() {
+        // Return health percentage
+        return this.health / this.maxHealth;
+    }
 }
 
 const ENEMY_TYPES = {
     regular: {
         health: 100,
-        speed: 1,
-        reward: 15,
-        damage: 1,
+        speed: 1.0,  // Faster but not too fast
+        reward: 25,
+        damage: 10,
         color: 'gray',
         size: 15
     },
     fast: {
-        health: 75,
-        speed: 2,
-        reward: 25,
-        damage: 1,
+        health: 80,
+        speed: 1.5,  // Faster but not too fast
+        reward: 30,
+        damage: 10,
         color: 'lightblue',
         size: 12
     },
     tank: {
-        health: 300,
-        speed: 0.7,
-        reward: 35,
-        damage: 2,
+        health: 200,
+        speed: 0.7,  // Faster but not too fast
+        reward: 50,
+        damage: 20,
         color: 'darkgreen',
         size: 20
     },
     ninja: {
         health: 150,
-        speed: 1.5,
-        reward: 40,
-        damage: 2,
+        speed: 1.2,  // Faster but not too fast
+        reward: 60,
+        damage: 20,
         color: 'black',
         size: 13,
         isNinja: true
     },
-    ghost: {  
-        health: 200,
-        speed: 1.3,
-        reward: 45,
-        damage: 3,
+    ghost: {
+        health: 175,
+        speed: 0.8,  // Faster but not too fast
+        reward: 75,
+        damage: 25,
         color: 'rgba(255, 255, 255, 0.7)',
         size: 16,
         isGhost: true
     },
     boss: {
-        health: 1000,
-        speed: 0.5,
-        reward: 200,
-        damage: 5,
+        health: 500,
+        speed: 0.5,  // Faster but not too fast
+        reward: 250,
+        damage: 50,
         color: 'purple',
         size: 30,
         isBoss: true

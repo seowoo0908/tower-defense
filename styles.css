@@ -23,7 +23,7 @@ body {
 }
 
 #gameCanvas.placing-turret {
-    cursor: pointer;
+    cursor: crosshair;
 }
 
 .game-ui {
@@ -42,52 +42,70 @@ body {
     font-size: 18px;
 }
 
-.turret-selection {
-    width: 250px;
+.tower-selection {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     background-color: rgba(10, 20, 40, 0.9);
     padding: 15px;
-    border-radius: 5px;
-    border: 1px solid #C8AA6E;
+    border-radius: 8px;
+    border: 2px solid #C8AA6E;
+    z-index: 1000;
 }
 
-.turret-selection h3 {
-    margin: 0 0 15px 0;
-    text-align: center;
-    color: #F0E6D2;
+.tower-options {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
 }
 
-.turret-options {
+.tower-option {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-}
-
-.turret-option {
-    display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 12px;
     background-color: #1E2328;
-    border: 1px solid #C8AA6E;
-    border-radius: 5px;
+    border: 2px solid #C8AA6E;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
-.turret-option:hover {
+.tower-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 8px;
+}
+
+.turret-base {
+    stroke-width: 3;
+}
+
+.turret-gun {
+    stroke-width: 2;
+}
+
+.tower-option:hover {
     background-color: #2F353B;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-.turret-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 10px;
+.tower-option.selected {
+    border: 3px solid #00ff00;
+    background-color: #2F353B;
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(0,255,0,0.3);
 }
 
-.turret-icon.lux { background-color: #E8D661; }
-.turret-icon.ashe { background-color: #A1DBF1; }
-.turret-icon.brand { background-color: #FF4C4C; }
-.turret-icon.thresh { background-color: #50C878; }
+.tower-cost {
+    color: gold;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
 
 .turret-info {
     flex-grow: 1;
@@ -374,6 +392,69 @@ button:disabled {
     animation: fadeOut 2s forwards;
 }
 
+#placement-preview {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1001;
+}
+
+#placement-preview .tower-icon {
+    width: 60px;
+    height: 60px;
+    opacity: 0.8;
+}
+
+.placement-valid .turret-base {
+    filter: drop-shadow(0 0 8px #0f0);
+}
+
+.placement-invalid .turret-base {
+    filter: drop-shadow(0 0 8px #f00);
+}
+
+.placing-turret {
+    cursor: crosshair !important;
+}
+
+/* Turret animations */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.tower-option:hover .turret-head {
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    10% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    20% { transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@keyframes waveAnnounce {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
 #placement-details {
     position: absolute;
     right: 10px;
@@ -422,31 +503,96 @@ button:disabled {
     display: none;
 }
 
-@keyframes fadeInOut {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-    10% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    20% { transform: translate(-50%, -50%) scale(1); }
-    80% { opacity: 1; }
-    100% { opacity: 0; }
+.turret-menu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(10, 20, 40, 0.95);
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #C8AA6E;
+    color: white;
+    z-index: 1000;
+    min-width: 250px;
 }
 
-@keyframes waveAnnounce {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-    50% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(1);
-    }
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #C8AA6E;
+    padding-bottom: 10px;
 }
 
-@keyframes fadeOut {
-    0% { opacity: 1; }
-    70% { opacity: 1; }
-    100% { opacity: 0; }
+.menu-header h3 {
+    margin: 0;
+    color: #C8AA6E;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #C8AA6E;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.close-btn:hover {
+    color: #fff;
+}
+
+.turret-info {
+    margin-bottom: 20px;
+}
+
+.turret-info p {
+    margin: 8px 0;
+    color: #eee;
+}
+
+.upgrade-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.upgrade-item {
+    width: 100%;
+}
+
+.upgrade-btn {
+    width: 100%;
+    padding: 8px;
+    background-color: #2F353B;
+    border: 1px solid #C8AA6E;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.upgrade-btn:hover:not(:disabled) {
+    background-color: #3F454B;
+    transform: translateY(-2px);
+}
+
+.upgrade-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #666;
+}
+
+.upgrade-btn .cost {
+    color: gold;
+    font-size: 14px;
+}
+
+.hidden {
+    display: none !important;
 }
